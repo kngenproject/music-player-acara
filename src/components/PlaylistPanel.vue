@@ -19,10 +19,10 @@
             title="Hapus playlist"
           >✕</span>
         </button>
-
-        <!-- Tombol tambah playlist baru -->
-        <button class="tab-new" @click="$emit('new-playlist')" title="Playlist baru">
-          ＋
+        <button class="tab-new" @click="$emit('new-playlist')" title="Playlist baru" aria-label="Playlist baru">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
         </button>
       </div>
     </div>
@@ -42,13 +42,29 @@
           @keydown.escape="isEditingName = false"
           @blur="confirmEditName"
         />
-        <span class="count">{{ playlist.length }}</span>
+        <span class="count-badge">{{ playlist.length }}</span>
       </div>
       <div class="header-btns">
-        <button class="hdr-btn" @click="startEditName" title="Ubah nama playlist">✏️</button>
-        <button class="hdr-btn" @click="$emit('upload-folder')" title="Buka Folder">📁</button>
-        <button class="hdr-btn" @click="$emit('upload-files')" title="Tambah File">➕</button>
-        <button class="hdr-btn danger" @click="$emit('clear')" title="Hapus Semua" v-if="playlist.length">🗑️</button>
+        <button class="hdr-btn" @click="startEditName" title="Ubah nama" aria-label="Ubah nama playlist">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+          </svg>
+        </button>
+        <button class="hdr-btn" @click="$emit('upload-folder')" title="Buka Folder" aria-label="Buka folder">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/>
+          </svg>
+        </button>
+        <button class="hdr-btn" @click="$emit('upload-files')" title="Tambah File" aria-label="Tambah file">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+        </button>
+        <button class="hdr-btn danger" @click="$emit('clear')" title="Hapus Semua" aria-label="Hapus semua" v-if="playlist.length">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12 1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/>
+          </svg>
+        </button>
       </div>
     </div>
 
@@ -65,27 +81,47 @@
           <span v-if="i === currentIndex && isPlaying" class="playing-anim">
             <span></span><span></span><span></span>
           </span>
-          <span v-else>{{ i + 1 }}</span>
+          <span v-else class="num-text">{{ i + 1 }}</span>
         </div>
         <div class="track-info">
           <div class="track-name">{{ track.name }}</div>
         </div>
-        <button class="remove-btn" @click.stop="$emit('remove', i)">✕</button>
+        <button class="remove-btn" @click.stop="$emit('remove', i)" aria-label="Hapus lagu">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
       </div>
     </div>
 
     <!-- Empty state -->
     <div class="playlist-empty" v-else>
-      <div class="empty-icon">🎵</div>
+      <div class="empty-icon">
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="currentColor" opacity="0.2">
+          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+        </svg>
+      </div>
       <p>Belum ada lagu</p>
-      <button class="add-btn" @click="$emit('upload-folder')">Buka Folder</button>
-      <button class="add-btn secondary" @click="$emit('upload-files')">Pilih File</button>
+      <div class="empty-actions">
+        <button class="add-btn" @click="$emit('upload-folder')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/>
+          </svg>
+          Buka Folder
+        </button>
+        <button class="add-btn secondary" @click="$emit('upload-files')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+          Pilih File
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, nextTick, watch } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 
 const props = defineProps({
   playlist: Array,
@@ -96,10 +132,10 @@ const props = defineProps({
 })
 
 const emit = defineEmits([
-  'play-track', 'remove', 'clear',
-  'upload-folder', 'upload-files',
-  'switch-playlist', 'delete-playlist',
-  'new-playlist', 'rename-playlist'
+  'play-track','remove','clear',
+  'upload-folder','upload-files',
+  'switch-playlist','delete-playlist',
+  'new-playlist','rename-playlist'
 ])
 
 const isEditingName = ref(false)
@@ -134,47 +170,41 @@ function confirmEditName() {
   overflow: hidden;
 }
 
-/* ── Tabs ── */
+/* Tabs */
 .playlist-tabs {
   border-bottom: 1px solid var(--border);
-  background: var(--surface2);
+  background: var(--bg);
   flex-shrink: 0;
 }
 
 .tabs-scroll {
   display: flex;
   gap: 4px;
-  padding: 6px 8px;
+  padding: 8px 10px;
   overflow-x: auto;
   overflow-y: hidden;
   align-items: center;
 }
-
-.tabs-scroll::-webkit-scrollbar { height: 3px; }
-.tabs-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.tabs-scroll::-webkit-scrollbar { height: 2px; }
+.tabs-scroll::-webkit-scrollbar-thumb { background: var(--border2); }
 
 .tab-btn {
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 10px;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  padding: 6px 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
   border-radius: var(--radius-sm);
   font-size: 12px;
-  color: var(--text2);
   font-weight: 600;
+  color: var(--text2);
   white-space: nowrap;
   flex-shrink: 0;
-  transition: all 0.2s;
-  max-width: 160px;
+  max-width: 150px;
+  transition: all 0.15s;
 }
-
-.tab-btn:hover {
-  background: var(--surface3);
-  color: var(--text);
-}
-
+.tab-btn:hover { background: var(--surface3); color: var(--text); }
 .tab-btn.active {
   background: var(--accent);
   color: #000;
@@ -184,7 +214,7 @@ function confirmEditName() {
 .tab-name {
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 90px;
+  max-width: 80px;
 }
 
 .tab-count {
@@ -198,102 +228,94 @@ function confirmEditName() {
 
 .tab-close {
   font-size: 11px;
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: pointer;
-  width: 16px;
-  height: 16px;
+  width: 16px; height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   flex-shrink: 0;
-  transition: opacity 0.15s;
 }
-
-.tab-close:hover {
-  opacity: 1;
-  background: rgba(0,0,0,0.25);
-}
+.tab-close:hover { opacity: 1; background: rgba(0,0,0,0.25); }
 
 .tab-new {
   flex-shrink: 0;
-  width: 30px;
-  height: 30px;
+  width: 32px; height: 32px;
   border-radius: var(--radius-sm);
   background: transparent;
-  border: 1px dashed var(--border);
+  border: 1.5px dashed var(--border2);
   color: var(--text3);
-  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s;
 }
-
 .tab-new:hover {
   border-color: var(--accent);
   color: var(--accent);
-  background: rgba(232,168,56,0.08);
+  background: var(--accent-soft);
 }
 
-/* ── Header ── */
+/* Header */
 .playlist-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 16px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   gap: 8px;
+  background: var(--surface);
 }
 
 .playlist-title-wrap {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   min-width: 0;
   flex: 1;
 }
 
 .playlist-title {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 800;
   color: var(--text2);
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
   text-transform: uppercase;
   cursor: pointer;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: color 0.15s;
 }
-
-.playlist-title:hover {
-  color: var(--text);
-}
+.playlist-title:hover { color: var(--text); }
 
 .playlist-name-input {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 800;
   background: var(--surface2);
-  border: 1px solid var(--accent);
-  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-xs);
   color: var(--text);
-  padding: 2px 8px;
+  padding: 3px 8px;
   outline: none;
   font-family: inherit;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
   min-width: 0;
   flex: 1;
 }
 
-.count {
-  background: var(--accent);
-  color: #000;
+.count-badge {
+  background: var(--accent-soft);
+  color: var(--accent);
   font-size: 10px;
-  padding: 1px 6px;
-  border-radius: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 20px;
+  border: 1px solid rgba(240,180,41,0.2);
   flex-shrink: 0;
 }
 
@@ -305,75 +327,77 @@ function confirmEditName() {
 
 .hdr-btn {
   background: var(--surface2);
-  color: var(--text);
+  color: var(--text2);
   border-radius: var(--radius-sm);
-  width: 32px;
-  height: 32px;
-  font-size: 15px;
+  width: 34px; height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s;
+  border: 1px solid var(--border);
+  transition: all 0.15s;
 }
+.hdr-btn:hover { background: var(--surface3); color: var(--text); }
+.hdr-btn.danger:hover { background: var(--danger-soft); color: var(--danger); border-color: rgba(232,85,85,0.2); }
 
-.hdr-btn:hover { background: var(--surface3); }
-.hdr-btn.danger:hover { background: rgba(232,64,64,0.2); }
-
-/* ── Body ── */
+/* Track list */
 .playlist-body {
   overflow-y: auto;
   flex: 1;
+  overscroll-behavior: contain;
 }
 
 .track-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
+  gap: 10px;
+  padding: 11px 14px;
   cursor: pointer;
   border-bottom: 1px solid var(--border);
   transition: background 0.1s;
+  position: relative;
 }
-
 .track-item:hover { background: var(--surface2); }
+.track-item:active { background: var(--surface3); }
 .track-item.active {
-  background: rgba(232,168,56,0.08);
+  background: var(--accent-soft);
   border-left: 3px solid var(--accent);
+  padding-left: 11px;
 }
 
 .track-num {
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 600;
   color: var(--text3);
-  width: 24px;
+  width: 22px;
   text-align: center;
   flex-shrink: 0;
 }
-
 .track-item.active .track-num { color: var(--accent); }
+
+.num-text { display: block; }
 
 .playing-anim {
   display: flex;
   align-items: flex-end;
   gap: 2px;
   height: 14px;
+  justify-content: center;
 }
-
 .playing-anim span {
   display: block;
   width: 3px;
   background: var(--accent);
   border-radius: 2px;
-  animation: eq 0.8s ease-in-out infinite alternate;
+  animation: eq 0.7s ease-in-out infinite alternate;
 }
-
 .playing-anim span:nth-child(1) { height: 6px; animation-delay: 0s; }
-.playing-anim span:nth-child(2) { height: 12px; animation-delay: 0.2s; }
-.playing-anim span:nth-child(3) { height: 8px; animation-delay: 0.4s; }
+.playing-anim span:nth-child(2) { height: 13px; animation-delay: 0.15s; }
+.playing-anim span:nth-child(3) { height: 9px; animation-delay: 0.3s; }
 
 @keyframes eq {
-  from { transform: scaleY(0.4); }
-  to { transform: scaleY(1); }
+  from { transform: scaleY(0.35); }
+  to   { transform: scaleY(1); }
 }
 
 .track-info { flex: 1; overflow: hidden; }
@@ -384,63 +408,71 @@ function confirmEditName() {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.4;
 }
-
-.track-item.active .track-name { color: var(--accent); }
+.track-item.active .track-name { color: var(--accent); font-weight: 600; }
 
 .remove-btn {
   background: transparent;
   border: none;
   color: var(--text3);
-  font-size: 12px;
-  width: 28px;
-  height: 28px;
+  width: 30px; height: 30px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: opacity 0.15s, background 0.15s;
   cursor: pointer;
+  flex-shrink: 0;
 }
-
 .track-item:hover .remove-btn { opacity: 1; }
-.remove-btn:hover { background: rgba(232,64,64,0.2); color: var(--danger); }
+.remove-btn:hover { background: var(--danger-soft); color: var(--danger); }
 
-/* ── Empty State ── */
+/* Empty */
 .playlist-empty {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 40px 20px;
+  gap: 10px;
+  padding: 40px 24px;
   color: var(--text3);
 }
+.empty-icon { margin-bottom: 4px; }
+.playlist-empty p { font-size: 14px; font-weight: 600; color: var(--text2); }
 
-.empty-icon { font-size: 48px; opacity: 0.3; }
-.playlist-empty p { font-size: 14px; }
+.empty-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 200px;
+  margin-top: 8px;
+}
 
 .add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   background: var(--accent);
   color: #000;
   font-weight: 700;
-  padding: 12px 24px;
+  padding: 13px 20px;
   border-radius: var(--radius);
   font-size: 14px;
   width: 100%;
-  max-width: 200px;
   border: none;
   cursor: pointer;
+  font-family: inherit;
   transition: opacity 0.2s;
 }
-
 .add-btn.secondary {
   background: var(--surface2);
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border2);
 }
-
 .add-btn:hover { opacity: 0.85; }
 </style>
