@@ -385,7 +385,7 @@ export function usePlayer() {
     play, pause, togglePlay, playNext, playPrev,
     seekTo, setVolume, toggleMute,
     manualFadeOut, manualFadeIn,
-    loadTrack, addFiles, removeTrack, clearPlaylist, loadPlaylistFromSaved,
+    loadTrack, addFiles, removeTrack, clearPlaylist,
     setFadePreset, formatTime, createNewPlaylist, switchPlaylist, deletePlaylist, getPlaylistName
   }
 }
