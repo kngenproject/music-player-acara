@@ -168,6 +168,7 @@
               <span class="pwa-badge" v-if="isPWA">PWA</span>
               <span class="status-dot" :class="{ playing: player.isPlaying.value }"></span>
             </div>
+          </div>
           <div class="main-tabs">
             <button class="main-tab" :class="{ active: activeTab === 'playing' }" @click="activeTab = 'playing'">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
@@ -210,10 +211,8 @@
             </div>
             <PlaylistPanel v-bind="playlistProps" v-on="playlistEmits" />
           </div>
-      </div>
+        </div>
     </template>
-
-    <!-- ── LANDSCAPE ── -->
     <template v-else>
       <div class="main-layout landscape-layout">
         <div class="landscape-left">
@@ -235,6 +234,8 @@
               <span class="pwa-badge" v-if="isPWA">PWA</span>
               <span class="status-dot" :class="{ playing: player.isPlaying.value }"></span>
             </div>
+          </div>
+          <PlayerControls v-bind="playerControlsProps" v-on="playerControlsEmits" />
           <AudioVisualizer
             :getAnalyser="player.getAnalyser"
             :getAudioCtx="player.getAudioCtx"
