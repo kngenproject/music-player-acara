@@ -173,6 +173,7 @@ export function usePlayer() {
         isPlaying.value = true
         setupMediaSession(track)
         fadeVolumeTo(isMuted.value ? 0 : volume.value, fadeInDuration.value)
+      } catch (e) { console.error('Play error:', e) }
     }
   }
 
