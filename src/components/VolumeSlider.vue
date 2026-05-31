@@ -9,25 +9,10 @@
 
     <div class="slider-wrap">
       <div class="vol-label">{{ Math.round(volume * 100) }}%</div>
-      <div
-        class="slider-track-wrap"
-        @click="onTrackClick"
-        ref="trackRef"
-      >
+      <div class="slider-track-wrap" @click="onTrackClick" ref="trackRef">
         <div class="slider-track">
-          <!-- Portrait: fill dari bawah ke atas (height%) -->
-          <!-- Landscape: fill dari kiri ke kanan (width%) -->
-          <div
-            class="slider-fill"
-            :style="isLandscape
-              ? { width: volume * 100 + '%', height: '100%', bottom: 0, left: 0 }
-              : { height: volume * 100 + '%' }"
-          ></div>
-          <div
-            class="slider-thumb"
-            :style="isLandscape
-              ? { left: volume * 100 + '%', bottom: 'auto', top: '50%', transform: 'translate(-50%, -50%)' }
-              : { bottom: volume * 100 + '%' }"
+          <div class="slider-fill" :style="fillStyle"></div>
+          <div class="slider-thumb" :style="thumbStyle"
             @mousedown="startDrag"
             @touchstart.prevent="startDrag"
           ></div>
@@ -37,14 +22,14 @@
 
     <div class="fade-btns">
       <button class="fade-btn fade-in-btn" @click="$emit('fade-in')" title="Fade In">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
           <polyline points="17 6 23 6 23 12"/>
         </svg>
         <span>IN</span>
       </button>
       <button class="fade-btn fade-out-btn" @click="$emit('fade-out')" title="Fade Out">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/>
           <polyline points="17 18 23 18 23 12"/>
         </svg>
@@ -55,7 +40,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const props = defineProps({
   volume: Number,
@@ -67,27 +52,36 @@ const emit = defineEmits(['update:volume', 'toggle-mute', 'fade-in', 'fade-out']
 const trackRef = ref(null)
 let dragging = false
 
+// Portrait: fill dari bawah (height%), thumb dari bawah
+// Landscape: fill dari kiri (width%), thumb dari kiri
+const fillStyle = computed(() =>
+  props.isLandscape
+    ? { width: props.volume * 100 + '%', height: '100%', top: 0, left: 0, bottom: 'auto', right: 'auto',
+        background: 'linear-gradient(to right, var(--accent2), var(--accent))' }
+    : { height: props.volume * 100 + '%' }
+)
+
+const thumbStyle = computed(() =>
+  props.isLandscape
+    ? { left: props.volume * 100 + '%', bottom: 'auto', top: '50%',
+        transform: 'translate(-50%, -50%)' }
+    : { bottom: props.volume * 100 + '%' }
+)
+
 function getVolFromEvent(e) {
   const track = trackRef.value
   if (!track) return props.volume
   const rect = track.getBoundingClientRect()
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY
-
   if (props.isLandscape) {
-    // Landscape: drag horizontal
-    const ratio = (clientX - rect.left) / rect.width
-    return Math.max(0, Math.min(1, ratio))
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX
+    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
   } else {
-    // Portrait: drag vertikal (dari atas ke bawah = kecil ke besar)
-    const ratio = 1 - (clientY - rect.top) / rect.height
-    return Math.max(0, Math.min(1, ratio))
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+    return Math.max(0, Math.min(1, 1 - (clientY - rect.top) / rect.height))
   }
 }
 
-function onTrackClick(e) {
-  emit('update:volume', getVolFromEvent(e))
-}
+function onTrackClick(e) { emit('update:volume', getVolFromEvent(e)) }
 
 function startDrag(e) {
   dragging = true
@@ -107,7 +101,7 @@ function startDrag(e) {
 </script>
 
 <style scoped>
-/* ── PORTRAIT (default) ── */
+/* ── PORTRAIT (default): panel vertikal di kiri ── */
 .volume-panel {
   display: flex;
   flex-direction: column;
@@ -119,6 +113,7 @@ function startDrag(e) {
   width: 72px;
   height: 100%;
   flex-shrink: 0;
+  transition: all 0.2s ease;
 }
 
 .mute-btn {
@@ -130,10 +125,9 @@ function startDrag(e) {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text);
   flex-shrink: 0;
 }
-.mute-btn.muted { background: var(--surface3); opacity: 0.5; }
+.mute-btn.muted { opacity: 0.45; }
 .mute-btn:hover { background: var(--surface3); }
 
 .slider-wrap {
@@ -164,7 +158,7 @@ function startDrag(e) {
   min-height: 0;
 }
 
-/* Portrait: slider vertikal */
+/* Portrait: track vertikal */
 .slider-track {
   position: relative;
   width: 20px;
@@ -176,9 +170,7 @@ function startDrag(e) {
 
 .slider-fill {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  bottom: 0; left: 0; right: 0;
   background: linear-gradient(to top, var(--accent2), var(--accent));
   border-radius: 10px;
   transition: height 0.05s, width 0.05s;
@@ -188,22 +180,21 @@ function startDrag(e) {
   position: absolute;
   left: 50%;
   transform: translate(-50%, 50%);
-  width: 28px;
-  height: 28px;
+  width: 26px; height: 26px;
   background: #fff;
   border-radius: 50%;
   box-shadow: 0 2px 8px rgba(0,0,0,0.5);
   border: 3px solid var(--accent);
   cursor: grab;
-  transition: bottom 0.05s, left 0.05s;
   z-index: 2;
+  transition: bottom 0.05s, left 0.05s, top 0.05s;
 }
-.slider-thumb:active { cursor: grabbing; }
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, 50%) scale(1.12); }
 
 .fade-btns {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
   flex-shrink: 0;
 }
@@ -213,24 +204,23 @@ function startDrag(e) {
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 8px 4px;
+  padding: 7px 4px;
   border-radius: var(--radius-sm);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
   width: 100%;
 }
-
-.fade-in-btn { background: rgba(64,192,112,0.15); color: var(--success); }
-.fade-in-btn:hover { background: rgba(64,192,112,0.25); }
-.fade-out-btn { background: rgba(232,64,64,0.15); color: var(--danger); }
+.fade-in-btn  { background: rgba(64,192,112,0.15); color: var(--success); }
+.fade-in-btn:hover  { background: rgba(64,192,112,0.25); }
+.fade-out-btn { background: rgba(232,64,64,0.15);  color: var(--danger); }
 .fade-out-btn:hover { background: rgba(232,64,64,0.25); }
 
-/* ── LANDSCAPE ── */
+/* ── LANDSCAPE: strip horizontal di bawah player ── */
 .volume-panel.landscape {
   flex-direction: row;
   width: 100%;
-  height: 68px;
+  height: 64px;
   padding: 0 14px;
   gap: 12px;
   border-right: none;
@@ -244,26 +234,22 @@ function startDrag(e) {
   flex-direction: row;
   align-items: center;
   gap: 10px;
-  width: 100%;
+  width: auto;
+  min-height: auto;
 }
 
 .volume-panel.landscape .slider-track-wrap {
   flex: 1;
-  width: 100%;
   height: auto;
   padding: 0;
   display: flex;
   align-items: center;
 }
 
-/* Landscape: slider horizontal */
+/* Landscape: track horizontal */
 .volume-panel.landscape .slider-track {
   width: 100%;
-  height: 20px;
-}
-
-.volume-panel.landscape .slider-fill {
-  background: linear-gradient(to right, var(--accent2), var(--accent));
+  height: 18px;
 }
 
 .volume-panel.landscape .fade-btns {
@@ -274,8 +260,9 @@ function startDrag(e) {
 
 .volume-panel.landscape .fade-btn {
   flex-direction: row;
-  padding: 6px 10px;
+  padding: 5px 10px;
   gap: 4px;
   width: auto;
+  font-size: 10px;
 }
 </style>

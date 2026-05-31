@@ -1,7 +1,38 @@
-import { ref, reactive, computed, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
+
+const STORAGE_KEY = 'acaraplay_saved_playlists'
+
+// ─── Simpan/load playlist (nama saja, bukan file blob) ───────────────────────
+export function getSavedPlaylists() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
+  } catch { return [] }
+}
+
+export function savePlaylistToStorage(name, tracks) {
+  const saved = getSavedPlaylists()
+  const entry = {
+    id: Date.now(),
+    name,
+    savedAt: new Date().toISOString(),
+    tracks: tracks.map(t => ({ name: t.name, filename: t.filename, size: t.size }))
+  }
+  // Ganti jika nama sama
+  const idx = saved.findIndex(s => s.name === name)
+  if (idx >= 0) saved[idx] = entry
+  else saved.push(entry)
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(saved))
+  return entry
+}
+
+export function deleteSavedPlaylist(id) {
+  const saved = getSavedPlaylists().filter(s => s.id !== id)
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(saved))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function usePlayer() {
-  // State
   const playlist = ref([])
   const currentIndex = ref(-1)
   const isPlaying = ref(false)
@@ -9,14 +40,13 @@ export function usePlayer() {
   const isMuted = ref(false)
   const currentTime = ref(0)
   const duration = ref(0)
-  const isLooping = ref(false)  // loop single
-  const isLoopingAll = ref(false) // loop playlist
+  const isLooping = ref(false)
+  const isLoopingAll = ref(false)
   const isShuffling = ref(false)
-  const fadeDuration = ref(3) // seconds
-  const fadePreset = ref('3') // '1','2','3','5','custom'
+  const fadeDuration = ref(3)
+  const fadePreset = ref('3')
   const crossfadeEnabled = ref(true)
 
-  // Audio context
   let audioCtx = null
   let gainNode = null
   let audioEl = null
@@ -46,46 +76,32 @@ export function usePlayer() {
     audioEl.addEventListener('timeupdate', onTimeUpdate)
     audioEl.addEventListener('ended', onEnded)
     audioEl.addEventListener('loadedmetadata', onLoaded)
-
     try {
       const { audioCtx: ctx, gainNode: gain } = getAudioCtx()
       const source = ctx.createMediaElementSource(audioEl)
       source.connect(gain)
-    } catch (e) {
-      // fallback: audio plays directly
-    }
+    } catch (e) {}
     return audioEl
   }
 
   function onTimeUpdate() {
     currentTime.value = audioEl?.currentTime || 0
-    // Crossfade trigger: 5s before end
     if (crossfadeEnabled.value && audioEl && duration.value > 0) {
       const timeLeft = duration.value - audioEl.currentTime
       if (timeLeft <= fadeDuration.value && timeLeft > 0 && isPlaying.value) {
-        if (!crossfadeTimer) {
-          crossfadeTimer = true
-          // already fading handled by next track fade-in
-        }
+        if (!crossfadeTimer) { crossfadeTimer = true }
       }
     }
   }
 
-  function onLoaded() {
-    duration.value = audioEl?.duration || 0
-  }
+  function onLoaded() { duration.value = audioEl?.duration || 0 }
 
   function onEnded() {
     crossfadeTimer = null
-    if (isLooping.value) {
-      audioEl.currentTime = 0
-      audioEl.play()
-    } else {
-      playNext()
-    }
+    if (isLooping.value) { audioEl.currentTime = 0; audioEl.play() }
+    else playNext()
   }
 
-  // Media Session API
   function setupMediaSession(track) {
     if (!navigator.mediaSession) return
     navigator.mediaSession.metadata = new MediaMetadata({
@@ -99,7 +115,6 @@ export function usePlayer() {
     navigator.mediaSession.setActionHandler('nexttrack', () => playNext())
   }
 
-  // Fade helpers
   function cancelFade() {
     if (fadeTimer) { clearInterval(fadeTimer); fadeTimer = null }
   }
@@ -114,29 +129,24 @@ export function usePlayer() {
     let step = 0
     fadeTimer = setInterval(() => {
       step++
-      const newVol = startVol + diff * (step / steps)
-      audioEl.volume = Math.max(0, Math.min(1, newVol))
+      audioEl.volume = Math.max(0, Math.min(1, startVol + diff * (step / steps)))
       if (step >= steps) {
-        clearInterval(fadeTimer)
-        fadeTimer = null
+        clearInterval(fadeTimer); fadeTimer = null
         audioEl.volume = targetVol
         onDone?.()
       }
     }, interval)
   }
 
-  // Core controls
   async function loadTrack(index, autoPlay = true) {
     if (index < 0 || index >= playlist.value.length) return
     currentIndex.value = index
     currentTime.value = 0
     duration.value = 0
     crossfadeTimer = null
-
     const track = playlist.value[index]
     const el = createAudio()
     el.src = track.url
-
     if (autoPlay) {
       try {
         if (audioCtx?.state === 'suspended') await audioCtx.resume()
@@ -145,9 +155,7 @@ export function usePlayer() {
         isPlaying.value = true
         setupMediaSession(track)
         fadeVolumeTo(isMuted.value ? 0 : volume.value, fadeDuration.value)
-      } catch (e) {
-        console.error('Play error:', e)
-      }
+      } catch (e) { console.error('Play error:', e) }
     }
   }
 
@@ -194,10 +202,7 @@ export function usePlayer() {
 
   function playPrev() {
     if (playlist.value.length === 0) return
-    if (currentTime.value > 3) {
-      audioEl.currentTime = 0
-      return
-    }
+    if (currentTime.value > 3) { audioEl.currentTime = 0; return }
     let prev = currentIndex.value - 1
     if (prev < 0) prev = isLoopingAll.value ? playlist.value.length - 1 : 0
     loadTrack(prev, isPlaying.value)
@@ -208,7 +213,6 @@ export function usePlayer() {
     currentTime.value = time
   }
 
-  // Volume
   function setVolume(val) {
     volume.value = val
     if (!isMuted.value && audioEl) audioEl.volume = val
@@ -241,7 +245,6 @@ export function usePlayer() {
     }
   }
 
-  // Playlist management
   function addFiles(files) {
     const audioTypes = ['audio/mpeg','audio/mp3','audio/wav','audio/ogg','audio/flac','audio/aac','audio/m4a','audio/x-m4a','audio/mp4']
     const newTracks = []
@@ -258,9 +261,7 @@ export function usePlayer() {
       })
     }
     playlist.value.push(...newTracks)
-    if (currentIndex.value === -1 && playlist.value.length > 0) {
-      loadTrack(0, false)
-    }
+    if (currentIndex.value === -1 && playlist.value.length > 0) loadTrack(0, false)
   }
 
   function removeTrack(index) {
@@ -268,13 +269,8 @@ export function usePlayer() {
     URL.revokeObjectURL(removed.url)
     playlist.value.splice(index, 1)
     if (currentIndex.value === index) {
-      if (playlist.value.length === 0) {
-        currentIndex.value = -1
-        isPlaying.value = false
-      } else {
-        const newIdx = Math.min(index, playlist.value.length - 1)
-        loadTrack(newIdx, isPlaying.value)
-      }
+      if (playlist.value.length === 0) { currentIndex.value = -1; isPlaying.value = false }
+      else loadTrack(Math.min(index, playlist.value.length - 1), isPlaying.value)
     } else if (currentIndex.value > index) {
       currentIndex.value--
     }
@@ -293,7 +289,6 @@ export function usePlayer() {
     if (val !== 'custom') fadeDuration.value = parseFloat(val)
   }
 
-  // Computed
   const currentTrack = computed(() =>
     currentIndex.value >= 0 ? playlist.value[currentIndex.value] : null
   )
