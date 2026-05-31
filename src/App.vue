@@ -92,7 +92,62 @@
       </div>
     </Teleport>
 
-    <!-- ── PORTRAIT ── -->
+    <!-- Settings Modal -->
+    <Teleport to="body">
+      <div class="modal-overlay" v-if="showSettings" @click.self="showSettings = false">
+        <div class="modal settings-modal">
+          <div class="modal-header">
+            <span>⚙️ Pengaturan</span>
+            <button class="modal-close" @click="showSettings = false">✕</button>
+          </div>
+
+          <!-- Wake Lock -->
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0">
+                  <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                </svg>
+                Keep On Screen
+              </div>
+              <div class="setting-desc">Cegah layar mati saat musik diputar</div>
+            </div>
+            <button class="toggle-btn" :class="{ active: wakeLockActive }" @click="toggleWakeLock">
+              <span class="toggle-knob"></span>
+            </button>
+          </div>
+          <div class="setting-wake-status" v-if="!wakeLockSupported">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+            Browser ini tidak mendukung Wake Lock
+          </div>
+
+          <div class="setting-divider"></div>
+
+          <!-- Update App -->
+          <div class="setting-item">
+            <div class="setting-info">
+              <div class="setting-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0">
+                  <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                </svg>
+                Update App
+              </div>
+              <div class="setting-desc">Muat ulang untuk mendapatkan versi terbaru</div>
+            </div>
+            <button class="update-app-btn" @click="updateApp" :class="{ loading: isUpdating }">
+              <svg v-if="!isUpdating" width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+              </svg>
+              <svg v-else width="15" height="15" viewBox="0 0 24 24" fill="currentColor" class="spin-icon">
+                <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+              </svg>
+              {{ isUpdating ? 'Memuat...' : 'Update' }}
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </Teleport>
     <template v-if="!isLandscape">
       <div class="main-layout portrait-layout">
           <div class="app-header">
@@ -107,11 +162,12 @@
               <button class="hdr-icon-btn" @click="openDrawer" title="Playlist Tersimpan">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
               </button>
+              <button class="hdr-icon-btn" :class="{ 'settings-active': wakeLockActive }" @click="showSettings = true" title="Pengaturan">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+              </button>
               <span class="pwa-badge" v-if="isPWA">PWA</span>
               <span class="status-dot" :class="{ playing: player.isPlaying.value }"></span>
             </div>
-          </div>
-          <!-- Tab Bar -->
           <div class="main-tabs">
             <button class="main-tab" :class="{ active: activeTab === 'playing' }" @click="activeTab = 'playing'">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
@@ -173,11 +229,12 @@
               <button class="hdr-icon-btn" @click="openDrawer" title="Playlist Tersimpan">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
               </button>
+              <button class="hdr-icon-btn" :class="{ 'settings-active': wakeLockActive }" @click="showSettings = true" title="Pengaturan">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+              </button>
               <span class="pwa-badge" v-if="isPWA">PWA</span>
               <span class="status-dot" :class="{ playing: player.isPlaying.value }"></span>
             </div>
-          </div>
-          <PlayerControls v-bind="playerControlsProps" v-on="playerControlsEmits" />
           <AudioVisualizer
             :getAnalyser="player.getAnalyser"
             :getAudioCtx="player.getAudioCtx"
@@ -226,7 +283,10 @@ const isLandscape = ref(false)
 let deferredPrompt = null
 
 // ── Wake Lock ──────────────────────────────────────────
+const showSettings = ref(false)
 const wakeLockActive = ref(false)
+const wakeLockSupported = ref('wakeLock' in navigator)
+const isUpdating = ref(false)
 let wakeLockSentinel = null
 
 async function requestWakeLock() {
@@ -257,6 +317,23 @@ async function toggleWakeLock() {
     await releaseWakeLock()
   } else {
     await requestWakeLock()
+  }
+}
+
+async function updateApp() {
+  isUpdating.value = true
+  try {
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations()
+      for (const reg of registrations) {
+        await reg.update()
+      }
+    }
+    setTimeout(() => {
+      window.location.reload(true)
+    }, 600)
+  } catch (e) {
+    window.location.reload(true)
   }
 }
 // ──────────────────────────────────────────────────────
@@ -388,8 +465,7 @@ const playerControlsProps = computed(() => ({
   fadeOutPreset: player.fadeOutPreset.value,
   fadeInDuration: player.fadeInDuration.value,
   fadeOutDuration: player.fadeOutDuration.value,
-  formatTime: player.formatTime,
-  wakeLockActive: wakeLockActive.value
+  formatTime: player.formatTime
 }))
 
 const playerControlsEmits = {
@@ -404,8 +480,7 @@ const playerControlsEmits = {
   'set-fade-in-preset': player.setFadeInPreset,
   'set-fade-in-duration': (v) => { player.fadeInDuration.value = v },
   'set-fade-out-preset': player.setFadeOutPreset,
-  'set-fade-out-duration': (v) => { player.fadeOutDuration.value = v },
-  'toggle-wake-lock': toggleWakeLock
+  'set-fade-out-duration': (v) => { player.fadeOutDuration.value = v }
 }
 
 const playlistProps = computed(() => ({
@@ -910,4 +985,130 @@ async function installPWA() {
   flex: 1;
   overflow: hidden;
 }
+
+/* Settings button active indicator */
+.hdr-icon-btn.settings-active {
+  background: rgba(56,193,114,0.15);
+  color: #38c172;
+  border-color: rgba(56,193,114,0.3);
+}
+
+/* Settings modal */
+.settings-modal {
+  width: min(360px, 92vw);
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 4px 0;
+}
+
+.setting-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.setting-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.setting-desc {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 3px;
+  padding-left: 24px;
+}
+
+.setting-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+.setting-wake-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--danger, #e85555);
+  padding: 6px 10px;
+  background: rgba(232,85,85,0.08);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(232,85,85,0.2);
+}
+
+/* Toggle switch */
+.toggle-btn {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  background: var(--surface3);
+  border-radius: 13px;
+  border: 1.5px solid var(--border2);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  flex-shrink: 0;
+}
+.toggle-btn.active {
+  background: #38c172;
+  border-color: #38c172;
+}
+.toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.toggle-btn.active .toggle-knob {
+  transform: translateX(20px);
+}
+
+/* Update app button */
+.update-app-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.update-app-btn:hover {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+.update-app-btn.loading {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.spin-icon {
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 </style>

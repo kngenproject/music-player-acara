@@ -69,19 +69,6 @@
             <path d="M3 18c3-6 6-6 9 0s6 6 9 0"/>
           </svg>
         </button>
-        <!-- Wake Lock / Keep On Screen -->
-        <button class="mode-btn wake-btn" :class="{ active: wakeLockActive }" @click="$emit('toggle-wake-lock')"
-          :title="wakeLockActive ? 'Keep On Screen: Aktif' : 'Layar bisa mati'"
-          aria-label="Toggle Keep On Screen">
-          <svg v-if="wakeLockActive" width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2a5 5 0 1 0 0 10A5 5 0 0 0 12 2zm0 12c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4z"/>
-            <circle cx="12" cy="7" r="3" fill="currentColor" opacity="0.4"/>
-            <path d="M20 10l-1.5 1.5M22 12h-2M20 14l-1.5-1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-          <svg v-else width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
-          </svg>
-        </button>
       </div>
 
       <div class="fade-settings">
@@ -138,15 +125,13 @@ const props = defineProps({
   fadeOutPreset: String,
   fadeInDuration: Number,
   fadeOutDuration: Number,
-  formatTime: Function,
-  wakeLockActive: Boolean
+  formatTime: Function
 })
 
 const emit = defineEmits([
   'toggle-play','prev','next',
   'toggle-loop','toggle-loop-all','toggle-shuffle','toggle-crossfade',
-  'seek','set-fade-in-preset','set-fade-in-duration','set-fade-out-preset','set-fade-out-duration',
-  'toggle-wake-lock'
+  'seek','set-fade-in-preset','set-fade-in-duration','set-fade-out-preset','set-fade-out-duration'
 ])
 
 const seekRef = ref(null)
@@ -402,16 +387,6 @@ function onSeekTouch(e) {
 }
 
 .fade-unit { font-size: 11px; color: var(--text2); }
-
-/* Wake lock button */
-.wake-btn.active {
-  background: rgba(56, 193, 114, 0.15) !important;
-  color: #38c172 !important;
-  border-color: rgba(56, 193, 114, 0.3) !important;
-}
-.wake-btn.active:hover {
-  background: rgba(56, 193, 114, 0.25) !important;
-}
 
 /* ── LANDSCAPE: kompak ── */
 @media (orientation: landscape) and (max-height: 500px) {
