@@ -127,6 +127,12 @@
 
           <!-- Tab: Now Playing -->
           <div v-show="activeTab === 'playing'" class="tab-pane">
+            <AudioVisualizer
+              :getAnalyser="player.getAnalyser"
+              :getAudioCtx="player.getAudioCtx"
+              :isPlaying="player.isPlaying.value"
+              :isLandscape="false"
+            />
             <PlayerControls v-bind="playerControlsProps" v-on="playerControlsEmits" />
             <VolumeSlider
               :volume="player.volume.value"
@@ -174,6 +180,12 @@
             </div>
           </div>
           <PlayerControls v-bind="playerControlsProps" v-on="playerControlsEmits" />
+          <AudioVisualizer
+            :getAnalyser="player.getAnalyser"
+            :getAudioCtx="player.getAudioCtx"
+            :isPlaying="player.isPlaying.value"
+            :isLandscape="true"
+          />
           <VolumeSlider
             :volume="player.volume.value"
             :isMuted="player.isMuted.value"
@@ -204,6 +216,7 @@ import { usePlayer, getSavedPlaylists, savePlaylistToStorage, deleteSavedPlaylis
 import VolumeSlider from './components/VolumeSlider.vue'
 import PlayerControls from './components/PlayerControls.vue'
 import PlaylistPanel from './components/PlaylistPanel.vue'
+import AudioVisualizer from './components/AudioVisualizer.vue'
 
 const player = usePlayer()
 const appRef = ref(null)

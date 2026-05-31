@@ -67,6 +67,7 @@ export function usePlayer() {
 
   let audioCtx = null
   let gainNode = null
+  let analyserNode = null
   let audioEl = null
   let fadeTimer = null
   let crossfadeTimer = null
@@ -75,9 +76,13 @@ export function usePlayer() {
     if (!audioCtx) {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)()
       gainNode = audioCtx.createGain()
-      gainNode.connect(audioCtx.destination)
+      analyserNode = audioCtx.createAnalyser()
+      analyserNode.fftSize = 256
+      analyserNode.smoothingTimeConstant = 0.8
+      gainNode.connect(analyserNode)
+      analyserNode.connect(audioCtx.destination)
     }
-    return { audioCtx, gainNode }
+    return { audioCtx, gainNode, analyserNode }
   }
 
   function createAudio() {
@@ -398,6 +403,8 @@ export function usePlayer() {
     manualFadeOut, manualFadeIn,
     loadTrack, addFiles, removeTrack, clearPlaylist,
     setFadeInPreset, setFadeOutPreset, formatTime,
-    createNewPlaylist, renameActivePlaylist, switchPlaylist, deletePlaylist
+    createNewPlaylist, renameActivePlaylist, switchPlaylist, deletePlaylist,
+    getAnalyser: () => analyserNode,
+    getAudioCtx: () => audioCtx
   }
 }
