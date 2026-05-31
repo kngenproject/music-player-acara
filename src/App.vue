@@ -64,7 +64,7 @@
         </div>
         <div class="drawer-list" v-if="savedPlaylists.length">
           <div class="drawer-item" v-for="sp in savedPlaylists" :key="sp.id">
-            <div class="drawer-info">
+            <div class="drawer-info" @click="loadSavedPlaylist(sp.id, sp.name)">
               <div class="drawer-name">{{ sp.name }}</div>
               <div class="drawer-meta">{{ sp.tracks.length }} lagu · {{ formatSavedDate(sp.savedAt) }}</div>
               <div class="drawer-tracks">
@@ -73,8 +73,9 @@
               </div>
             </div>
             <div class="drawer-actions">
-              <button class="drawer-edit" @click="openRenameModal(sp.id, sp.name)" title="Ubah nama">✏️</button>
-              <button class="drawer-del" @click="deletePlaylist(sp.id)" title="Hapus">🗑️</button>
+              <button class="drawer-load" @click.stop="loadSavedPlaylist(sp.id, sp.name)" title="Load">📂</button>
+              <button class="drawer-edit" @click.stop="openRenameModal(sp.id, sp.name)" title="Ubah nama">✏️</button>
+              <button class="drawer-del" @click.stop="deletePlaylist(sp.id)" title="Hapus">🗑️</button>
             </div>
           </div>
         </div>
@@ -101,7 +102,7 @@
           <div class="app-header">
             <div class="app-logo">🎵 AcaraPlay</div>
             <div class="header-actions">
-              <button class="hdr-icon-btn" @click="openSaveModal" title="Simpan Playlist" v-if="player.playlist.value.length">💾</button>
+              <button class="hdr-icon-btn" @click="openSaveModal" title="Simpan Playlist" v-if="player.activePlaylist.value.length">💾</button>
               <button class="hdr-icon-btn" @click="openDrawer" title="Playlist Tersimpan">📂</button>
               <span class="pwa-badge" v-if="isPWA">PWA</span>
               <span class="status-dot" :class="{ playing: player.isPlaying.value }"></span>
@@ -122,7 +123,7 @@
           <div class="app-header">
             <div class="app-logo">🎵 AcaraPlay</div>
             <div class="header-actions">
-              <button class="hdr-icon-btn" @click="openSaveModal" title="Simpan Playlist" v-if="player.playlist.value.length">💾</button>
+              <button class="hdr-icon-btn" @click="openSaveModal" title="Simpan Playlist" v-if="player.activePlaylist.value.length">💾</button>
               <button class="hdr-icon-btn" @click="openDrawer" title="Playlist Tersimpan">📂</button>
               <span class="landscape-badge">⬛ Tablet</span>
               <span class="pwa-badge" v-if="isPWA">PWA</span>
@@ -177,7 +178,7 @@ const renameInputRef = ref(null)
 const savedPlaylists = ref(getSavedPlaylists())
 
 function openSaveModal() {
-  savePlaylistName.value = player.playlistName.value || ''
+  savePlaylistName.value = ''
   showSaveModal.value = true
   nextTick(() => saveInputRef.value?.focus())
 }
@@ -197,8 +198,7 @@ function openDrawer() {
 function confirmSave() {
   const name = savePlaylistName.value.trim()
   if (!name) return
-  savePlaylistToStorage(name, player.playlist.value)
-  player.playlistName.value = name
+  savePlaylistToStorage(name, player.activePlaylist.value)
   savedPlaylists.value = getSavedPlaylists()
   showSaveModal.value = false
 }
@@ -215,6 +215,30 @@ function confirmRename() {
 function deletePlaylist(id) {
   deleteSavedPlaylist(id)
   savedPlaylists.value = getSavedPlaylists()
+}
+
+function loadSavedPlaylist(playlistId, playlistName) {
+  const saved = getSavedPlaylists().find(p => p.id === playlistId)
+  if (!saved || !saved.tracks.length) return
+  
+  // Create new playlist for loaded data
+  const newId = player.createNewPlaylist(playlistName)
+  player.switchPlaylist(newId)
+  
+  // Create placeholder tracks with metadata
+  const tracks = saved.tracks.map((t, idx) => ({
+    id: Date.now() + idx,
+    name: t.name,
+    filename: t.filename,
+    url: '',
+    size: t.size,
+    artist: '',
+    album: '',
+    isSavedReference: true
+  }))
+  
+  player.playlists.value[newId] = tracks
+  showDrawer.value = false
 }
 
 function formatSavedDate(iso) {
@@ -254,8 +278,9 @@ const playerControlsEmits = {
 }
 
 const playlistProps = computed(() => ({
-  playlist: player.playlist.value,
-  playlistName: player.playlistName.value,
+  playlist: player.activePlaylist.value,
+  playlists: player.playlists.value,
+  activePlaylistId: player.activePlaylistId.value,
   currentIndex: player.currentIndex.value,
   isPlaying: player.isPlaying.value
 }))
@@ -266,11 +291,15 @@ const playlistEmits = {
   'clear': player.clearPlaylist,
   'upload-files': () => fileInput.value?.click(),
   'upload-folder': () => folderInput.value?.click(),
-  'rename-playlist': openRenameModal
+  'switch-playlist': player.switchPlaylist,
+  'delete-playlist': player.deletePlaylist
 }
 
 function onFilesSelected(e) {
   const files = Array.from(e.target.files || [])
+  if (!player.activePlaylistId.value) {
+    player.createNewPlaylist('Playlist Aktif')
+  }
   player.addFiles(files, null)
   e.target.value = ''
 }
@@ -283,6 +312,8 @@ function onFolderSelected(e) {
   const firstPath = files[0].webkitRelativePath || files[0].name
   const folderName = firstPath.split('/')[0] || 'Folder'
   
+  // Create new playlist untuk folder ini
+  player.createNewPlaylist(folderName)
   player.addFiles(files, folderName)
   e.target.value = ''
 }
@@ -294,7 +325,7 @@ function checkOrientation() {
 function onKeydown(e) {
   if (e.target === saveInputRef.value || e.target === renameInputRef.value) return
   switch(e.code || String.fromCharCode(e.keyCode)) {
-    case 'Space': break // already prevented
+    case 'Space': break
     case 'ArrowLeft': e.preventDefault(); player.seekTo(Math.max(0, player.currentTime.value - 5)); break
     case 'ArrowRight': e.preventDefault(); player.seekTo(Math.min(player.duration.value, player.currentTime.value + 5)); break
     case 'ArrowUp': e.preventDefault(); player.setVolume(Math.min(1, player.volume.value + 0.05)); break
@@ -302,7 +333,7 @@ function onKeydown(e) {
     case 'm': case 'M': player.toggleMute(); break
     case 'f': case 'F': player.manualFadeOut(); break
     case 'g': case 'G': player.manualFadeIn(); break
-    case 's': case 'S': if (player.playlist.value.length) openSaveModal(); break
+    case 's': case 'S': if (player.activePlaylist.value.length) openSaveModal(); break
   }
 }
 
@@ -490,7 +521,7 @@ async function installPWA() {
   border-bottom: 1px solid var(--border);
 }
 .drawer-item:last-child { border-bottom: none; }
-.drawer-info { flex: 1; min-width: 0; }
+.drawer-info { flex: 1; min-width: 0; cursor: pointer; }
 .drawer-name { font-size: 14px; font-weight: 700; color: var(--text); }
 .drawer-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
 .drawer-tracks {
@@ -508,6 +539,12 @@ async function installPWA() {
 .drawer-actions {
   display: flex; gap: 4px;
 }
+.drawer-load {
+  background: transparent; color: var(--text3); font-size: 18px;
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.drawer-load:hover { background: rgba(64,192,112,0.15); color: var(--success); }
 .drawer-edit {
   background: transparent; color: var(--text3); font-size: 18px;
   width: 36px; height: 36px; border-radius: 50%;

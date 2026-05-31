@@ -41,11 +41,16 @@ export function renamePlaylist(id, newName) {
   return false
 }
 
+export function getPlaylistById(id) {
+  const saved = getSavedPlaylists()
+  return saved.find(s => s.id === id)
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function usePlayer() {
-  const playlist = ref([])
-  const playlistName = ref('Playlist Aktif')
+  const playlists = ref({}) // { playlistId: { name, tracks } }
+  const activePlaylistId = ref(null)
   const currentIndex = ref(-1)
   const isPlaying = ref(false)
   const volume = ref(0.8)
@@ -151,12 +156,12 @@ export function usePlayer() {
   }
 
   async function loadTrack(index, autoPlay = true) {
-    if (index < 0 || index >= playlist.value.length) return
+    if (index < 0 || index >= activePlaylist.value.length) return
     currentIndex.value = index
     currentTime.value = 0
     duration.value = 0
     crossfadeTimer = null
-    const track = playlist.value[index]
+    const track = activePlaylist.value[index]
     const el = createAudio()
     el.src = track.url
     if (autoPlay) {
@@ -178,7 +183,7 @@ export function usePlayer() {
     audioEl.volume = 0
     await audioEl.play()
     isPlaying.value = true
-    const track = playlist.value[currentIndex.value]
+    const track = activePlaylist.value[currentIndex.value]
     if (track) setupMediaSession(track)
     fadeVolumeTo(isMuted.value ? 0 : volume.value, fadeDuration.value)
   }
@@ -198,13 +203,13 @@ export function usePlayer() {
   }
 
   function playNext() {
-    if (playlist.value.length === 0) return
+    if (activePlaylist.value.length === 0) return
     let next
     if (isShuffling.value) {
-      next = Math.floor(Math.random() * playlist.value.length)
+      next = Math.floor(Math.random() * activePlaylist.value.length)
     } else {
       next = currentIndex.value + 1
-      if (next >= playlist.value.length) {
+      if (next >= activePlaylist.value.length) {
         if (isLoopingAll.value) next = 0
         else { isPlaying.value = false; return }
       }
@@ -213,10 +218,10 @@ export function usePlayer() {
   }
 
   function playPrev() {
-    if (playlist.value.length === 0) return
+    if (activePlaylist.value.length === 0) return
     if (currentTime.value > 3) { audioEl.currentTime = 0; return }
     let prev = currentIndex.value - 1
-    if (prev < 0) prev = isLoopingAll.value ? playlist.value.length - 1 : 0
+    if (prev < 0) prev = isLoopingAll.value ? activePlaylist.value.length - 1 : 0
     loadTrack(prev, isPlaying.value)
   }
 
@@ -274,41 +279,70 @@ export function usePlayer() {
       })
     }
     
-    // Set nama playlist dari folder jika ada
-    if (folderName && playlist.value.length === 0) {
-      playlistName.value = folderName
+    // Create/set playlist
+    if (!activePlaylistId.value) {
+      activePlaylistId.value = Date.now()
     }
     
-    playlist.value.push(...newTracks)
-    if (currentIndex.value === -1 && playlist.value.length > 0) loadTrack(0, false)
-  }
-
-  function loadPlaylistFromSaved(savedPlaylist) {
-    // Bersihkan playlist lama
-    clearPlaylist()
-    playlistName.value = savedPlaylist.name
-    // Note: tracks disini hanya metadata, file audio perlu di-upload ulang
+    if (!playlists.value[activePlaylistId.value]) {
+      playlists.value[activePlaylistId.value] = []
+    }
+    
+    playlists.value[activePlaylistId.value].push(...newTracks)
+    
+    if (currentIndex.value === -1 && activePlaylist.value.length > 0) loadTrack(0, false)
   }
 
   function removeTrack(index) {
-    const removed = playlist.value[index]
+    if (!activePlaylist.value[index]) return
+    const removed = activePlaylist.value[index]
     URL.revokeObjectURL(removed.url)
-    playlist.value.splice(index, 1)
+    activePlaylist.value.splice(index, 1)
     if (currentIndex.value === index) {
-      if (playlist.value.length === 0) { currentIndex.value = -1; isPlaying.value = false }
-      else loadTrack(Math.min(index, playlist.value.length - 1), isPlaying.value)
+      if (activePlaylist.value.length === 0) { currentIndex.value = -1; isPlaying.value = false }
+      else loadTrack(Math.min(index, activePlaylist.value.length - 1), isPlaying.value)
     } else if (currentIndex.value > index) {
       currentIndex.value--
     }
   }
 
   function clearPlaylist() {
-    playlist.value.forEach(t => URL.revokeObjectURL(t.url))
-    playlist.value = []
+    if (!activePlaylistId.value) return
+    activePlaylist.value.forEach(t => URL.revokeObjectURL(t.url))
+    delete playlists.value[activePlaylistId.value]
+    activePlaylistId.value = null
     currentIndex.value = -1
     isPlaying.value = false
-    playlistName.value = 'Playlist Aktif'
     if (audioEl) { audioEl.pause(); audioEl.src = '' }
+  }
+
+  function createNewPlaylist(name) {
+    const id = Date.now()
+    playlists.value[id] = []
+    activePlaylistId.value = id
+    return id
+  }
+
+  function switchPlaylist(playlistId) {
+    if (!playlists.value[playlistId]) return
+    currentIndex.value = -1
+    isPlaying.value = false
+    if (audioEl) { audioEl.pause(); audioEl.src = '' }
+    activePlaylistId.value = playlistId
+  }
+
+  function deletePlaylist(playlistId) {
+    if (!playlists.value[playlistId]) return
+    playlists.value[playlistId].forEach(t => URL.revokeObjectURL(t.url))
+    delete playlists.value[playlistId]
+    if (activePlaylistId.value === playlistId) {
+      const remaining = Object.keys(playlists.value)
+      activePlaylistId.value = remaining.length > 0 ? remaining[0] : null
+    }
+  }
+
+  function getPlaylistName(playlistId) {
+    return playlists.value[playlistId] ? 'Playlist' : null
   }
 
   function setFadePreset(val) {
@@ -317,8 +351,13 @@ export function usePlayer() {
   }
 
   const currentTrack = computed(() =>
-    currentIndex.value >= 0 ? playlist.value[currentIndex.value] : null
+    currentIndex.value >= 0 && activePlaylist.value ? activePlaylist.value[currentIndex.value] : null
   )
+
+  const activePlaylist = computed(() => {
+    if (!activePlaylistId.value) return []
+    return playlists.value[activePlaylistId.value] || []
+  })
 
   const progressPercent = computed(() =>
     duration.value > 0 ? (currentTime.value / duration.value) * 100 : 0
@@ -333,11 +372,13 @@ export function usePlayer() {
 
   onUnmounted(() => {
     cancelFade()
-    playlist.value.forEach(t => URL.revokeObjectURL(t.url))
+    Object.values(playlists.value).forEach(pl => {
+      pl.forEach(t => URL.revokeObjectURL(t.url))
+    })
   })
 
   return {
-    playlist, playlistName, currentIndex, isPlaying, volume, isMuted,
+    playlists, activePlaylistId, activePlaylist, currentIndex, isPlaying, volume, isMuted,
     currentTime, duration, isLooping, isLoopingAll, isShuffling,
     fadeDuration, fadePreset, crossfadeEnabled,
     currentTrack, progressPercent,
@@ -345,6 +386,6 @@ export function usePlayer() {
     seekTo, setVolume, toggleMute,
     manualFadeOut, manualFadeIn,
     loadTrack, addFiles, removeTrack, clearPlaylist, loadPlaylistFromSaved,
-    setFadePreset, formatTime
+    setFadePreset, formatTime, createNewPlaylist, switchPlaylist, deletePlaylist, getPlaylistName
   }
 }
