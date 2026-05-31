@@ -225,6 +225,42 @@ const isPWA = ref(false)
 const isLandscape = ref(false)
 let deferredPrompt = null
 
+// ── Wake Lock ──────────────────────────────────────────
+const wakeLockActive = ref(false)
+let wakeLockSentinel = null
+
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLockSentinel = await navigator.wakeLock.request('screen')
+      wakeLockActive.value = true
+      wakeLockSentinel.addEventListener('release', () => {
+        wakeLockActive.value = false
+        wakeLockSentinel = null
+      })
+    }
+  } catch (e) {
+    wakeLockActive.value = false
+  }
+}
+
+async function releaseWakeLock() {
+  if (wakeLockSentinel) {
+    await wakeLockSentinel.release()
+    wakeLockSentinel = null
+  }
+  wakeLockActive.value = false
+}
+
+async function toggleWakeLock() {
+  if (wakeLockActive.value) {
+    await releaseWakeLock()
+  } else {
+    await requestWakeLock()
+  }
+}
+// ──────────────────────────────────────────────────────
+
 // ── Playlist save/load/rename ──────────────────────────
 const showSaveModal = ref(false)
 const showRenameModal = ref(false)
@@ -352,7 +388,8 @@ const playerControlsProps = computed(() => ({
   fadeOutPreset: player.fadeOutPreset.value,
   fadeInDuration: player.fadeInDuration.value,
   fadeOutDuration: player.fadeOutDuration.value,
-  formatTime: player.formatTime
+  formatTime: player.formatTime,
+  wakeLockActive: wakeLockActive.value
 }))
 
 const playerControlsEmits = {
@@ -367,7 +404,8 @@ const playerControlsEmits = {
   'set-fade-in-preset': player.setFadeInPreset,
   'set-fade-in-duration': (v) => { player.fadeInDuration.value = v },
   'set-fade-out-preset': player.setFadeOutPreset,
-  'set-fade-out-duration': (v) => { player.fadeOutDuration.value = v }
+  'set-fade-out-duration': (v) => { player.fadeOutDuration.value = v },
+  'toggle-wake-lock': toggleWakeLock
 }
 
 const playlistProps = computed(() => ({
@@ -387,7 +425,8 @@ const playlistEmits = {
   'switch-playlist': player.switchPlaylist,
   'delete-playlist': player.deletePlaylist,
   'new-playlist': () => player.createNewPlaylist('Playlist Baru'),
-  'rename-playlist': (name) => player.renameActivePlaylist(name)
+  'rename-playlist': (name) => player.renameActivePlaylist(name),
+  'update-folder': updateCurrentFolder
 }
 
 function onFilesSelected(e) {
@@ -408,6 +447,28 @@ function onFolderSelected(e) {
   player.addFiles(files, folderName)
   e.target.value = ''
 }
+
+// ── Update folder: pilih folder baru lalu update playlist aktif ──────
+function updateCurrentFolder() {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.webkitdirectory = true
+  input.multiple = true
+  input.accept = 'audio/*'
+  input.onchange = () => {
+    const files = Array.from(input.files || [])
+    if (files.length === 0) return
+    const firstPath = files[0].webkitRelativePath || files[0].name
+    const folderName = firstPath.split('/')[0] || 'Folder'
+    // Rename playlist aktif sesuai folder baru
+    player.renameActivePlaylist(folderName)
+    // Bersihkan playlist dan isi ulang
+    player.clearPlaylist()
+    player.addFiles(files, folderName)
+  }
+  input.click()
+}
+// ────────────────────────────────────────────────────────────────────
 
 function checkOrientation() {
   isLandscape.value = window.innerHeight < window.innerWidth
@@ -442,6 +503,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeydown)
   window.removeEventListener('resize', checkOrientation)
+  releaseWakeLock()
 })
 
 async function installPWA() {
