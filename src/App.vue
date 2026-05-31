@@ -122,6 +122,11 @@
             </div>
           </div>
           <PlayerControls v-bind="playerControlsProps" v-on="playerControlsEmits" />
+          <div v-if="needsRelink" class="relink-banner">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+            <span>Playlist ini perlu file audio dipilih ulang</span>
+            <button class="relink-btn" @click="relinkPlaylistFiles">Pilih File</button>
+          </div>
           <PlaylistPanel v-bind="playlistProps" v-on="playlistEmits" />
         </div>
       </div>
@@ -158,7 +163,14 @@
             @fade-out="player.manualFadeOut"
           />
         </div>
-        <PlaylistPanel v-bind="playlistProps" v-on="playlistEmits" />
+        <div class="landscape-playlist-wrap">
+          <div v-if="needsRelink" class="relink-banner">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+            <span>Playlist ini perlu file audio dipilih ulang</span>
+            <button class="relink-btn" @click="relinkPlaylistFiles">Pilih File</button>
+          </div>
+          <PlaylistPanel v-bind="playlistProps" v-on="playlistEmits" />
+        </div>
       </div>
     </template>
 
@@ -230,6 +242,39 @@ function confirmRename() {
 function deletePlaylist(id) {
   deleteSavedPlaylist(id)
   savedPlaylists.value = getSavedPlaylists()
+}
+
+const needsRelink = computed(() =>
+  player.activePlaylist.value.length > 0 &&
+  player.activePlaylist.value.some(t => !t.url || t.isSavedReference)
+)
+
+function relinkPlaylistFiles() {
+  const tracks = player.activePlaylist.value
+  if (!tracks.length) return
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.multiple = true
+  input.accept = 'audio/*'
+  input.onchange = () => {
+    const files = Array.from(input.files)
+    let linkedCount = 0
+    tracks.forEach(track => {
+      const match = files.find(f => f.name === track.filename)
+      if (match) {
+        track.url = URL.createObjectURL(match)
+        track.isSavedReference = false
+        linkedCount++
+      }
+    })
+    if (linkedCount > 0 && player.currentIndex.value < 0) {
+      player.loadTrack(0, false)
+    } else if (linkedCount > 0 && player.currentIndex.value >= 0) {
+      const idx = player.currentIndex.value
+      player.loadTrack(idx, false)
+    }
+  }
+  input.click()
 }
 
 function loadSavedPlaylist(playlistId, playlistName) {
@@ -685,4 +730,42 @@ async function installPWA() {
 }
 .drawer-empty p { font-size: 14px; color: var(--text2); }
 .drawer-empty small { font-size: 12px; }
+
+/* Relink banner */
+.relink-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(240, 180, 41, 0.12);
+  border-bottom: 1px solid rgba(240, 180, 41, 0.25);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.relink-banner svg { flex-shrink: 0; }
+.relink-banner span { flex: 1; }
+.relink-btn {
+  background: var(--accent);
+  color: #000;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.relink-btn:hover { opacity: 0.85; }
+
+/* Landscape playlist wrap */
+.landscape-playlist-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
 </style>
