@@ -1,5 +1,5 @@
 <template>
-  <div class="volume-panel" :class="{ landscape: isLandscape }">
+  <div class="volume-panel" :class="{ landscape: isLandscape, inline: isInline }">
     <!-- Mute button -->
     <button class="mute-btn" @click="$emit('toggle-mute')" :class="{ muted: isMuted }" aria-label="Toggle mute">
       <svg v-if="isMuted" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -54,7 +54,8 @@ import { ref, computed } from 'vue'
 const props = defineProps({
   volume: Number,
   isMuted: Boolean,
-  isLandscape: { type: Boolean, default: false }
+  isLandscape: { type: Boolean, default: false },
+  isInline: { type: Boolean, default: false }
 })
 const emit = defineEmits(['update:volume','toggle-mute','fade-in','fade-out'])
 
@@ -62,13 +63,13 @@ const trackRef = ref(null)
 let dragging = false
 
 const fillStyle = computed(() =>
-  props.isLandscape
+  (props.isLandscape || props.isInline)
     ? { width: props.volume * 100 + '%', height: '100%', top: 0, left: 0, bottom: 'auto', right: 'auto' }
     : { height: props.volume * 100 + '%' }
 )
 
 const thumbStyle = computed(() =>
-  props.isLandscape
+  (props.isLandscape || props.isInline)
     ? { left: props.volume * 100 + '%', bottom: 'auto', top: '50%', transform: 'translate(-50%, -50%)' }
     : { bottom: props.volume * 100 + '%' }
 )
@@ -77,7 +78,7 @@ function getVolFromEvent(e) {
   const track = trackRef.value
   if (!track) return props.volume
   const rect = track.getBoundingClientRect()
-  if (props.isLandscape) {
+  if (props.isLandscape || props.isInline) {
     const clientX = e.touches ? e.touches[0].clientX : e.clientX
     return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
   } else {
@@ -232,6 +233,56 @@ function startDrag(e) {
 }
 .fade-out-btn:hover { background: rgba(232,85,85,0.18); }
 
+/* ══ INLINE: strip horizontal di tab now playing ══ */
+.volume-panel.inline {
+  flex-direction: row;
+  width: 100%;
+  height: auto;
+  padding: 10px 16px;
+  gap: 12px;
+  border-right: none;
+  border-top: 1px solid var(--border);
+  align-items: center;
+  flex-shrink: 0;
+}
+.volume-panel.inline .mute-btn {
+  width: 38px; height: 38px;
+}
+.volume-panel.inline .slider-wrap {
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  width: auto;
+  min-height: auto;
+}
+.volume-panel.inline .vol-label {
+  font-size: 11px;
+  min-width: 32px;
+  text-align: right;
+}
+.volume-panel.inline .slider-track-wrap {
+  flex: 1;
+  height: auto;
+  padding: 0;
+  align-items: center;
+}
+.volume-panel.inline .slider-track {
+  width: 100%;
+  height: 16px;
+}
+.volume-panel.inline .fade-btns {
+  flex-direction: row;
+  gap: 6px;
+  width: auto;
+}
+.volume-panel.inline .fade-btn {
+  flex-direction: row;
+  padding: 5px 10px;
+  gap: 5px;
+  width: auto;
+  font-size: 9px;
+}
 /* ══ LANDSCAPE: strip horizontal bawah ══ */
 .volume-panel.landscape {
   flex-direction: row;

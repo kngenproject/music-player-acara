@@ -95,15 +95,6 @@
     <!-- ── PORTRAIT ── -->
     <template v-if="!isLandscape">
       <div class="main-layout portrait-layout">
-        <VolumeSlider
-          :volume="player.volume.value"
-          :isMuted="player.isMuted.value"
-          :isLandscape="false"
-          @update:volume="player.setVolume"
-          @toggle-mute="player.toggleMute"
-          @fade-in="player.manualFadeIn"
-          @fade-out="player.manualFadeOut"
-        />
         <div class="right-content">
           <div class="app-header">
             <div class="app-logo">
@@ -121,13 +112,43 @@
               <span class="status-dot" :class="{ playing: player.isPlaying.value }"></span>
             </div>
           </div>
-          <PlayerControls v-bind="playerControlsProps" v-on="playerControlsEmits" />
-          <div v-if="needsRelink" class="relink-banner">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
-            <span>Playlist ini perlu file audio dipilih ulang</span>
-            <button class="relink-btn" @click="relinkPlaylistFiles">Pilih File</button>
+          <!-- Tab Bar -->
+          <div class="main-tabs">
+            <button class="main-tab" :class="{ active: activeTab === 'playing' }" @click="activeTab = 'playing'">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+              Now Playing
+            </button>
+            <button class="main-tab" :class="{ active: activeTab === 'playlist' }" @click="activeTab = 'playlist'">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+              Playlist
+              <span v-if="player.activePlaylist.value.length" class="tab-count-badge">{{ player.activePlaylist.value.length }}</span>
+            </button>
           </div>
-          <PlaylistPanel v-bind="playlistProps" v-on="playlistEmits" />
+
+          <!-- Tab: Now Playing -->
+          <div v-show="activeTab === 'playing'" class="tab-pane">
+            <PlayerControls v-bind="playerControlsProps" v-on="playerControlsEmits" />
+            <VolumeSlider
+              :volume="player.volume.value"
+              :isMuted="player.isMuted.value"
+              :isLandscape="false"
+              :isInline="true"
+              @update:volume="player.setVolume"
+              @toggle-mute="player.toggleMute"
+              @fade-in="player.manualFadeIn"
+              @fade-out="player.manualFadeOut"
+            />
+          </div>
+
+          <!-- Tab: Playlist -->
+          <div v-show="activeTab === 'playlist'" class="tab-pane">
+            <div v-if="needsRelink" class="relink-banner">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+              <span>Playlist ini perlu file audio dipilih ulang</span>
+              <button class="relink-btn" @click="relinkPlaylistFiles">Pilih File</button>
+            </div>
+            <PlaylistPanel v-bind="playlistProps" v-on="playlistEmits" />
+          </div>
         </div>
       </div>
     </template>
@@ -203,6 +224,7 @@ const renamePlaylistId = ref(null)
 const saveInputRef = ref(null)
 const renameInputRef = ref(null)
 const savedPlaylists = ref(getSavedPlaylists())
+const activeTab = ref('playing')
 
 function openSaveModal() {
   savePlaylistName.value = ''
@@ -540,6 +562,54 @@ async function installPWA() {
   overflow: hidden;
 }
 .right-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Main Tabs */
+.main-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+}
+.main-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 11px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text3);
+  background: transparent;
+  border: none;
+  border-bottom: 2.5px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+.main-tab:hover { color: var(--text2); background: var(--surface2); }
+.main-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: var(--accent-soft);
+}
+.tab-count-badge {
+  background: var(--accent);
+  color: #000;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 20px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.tab-pane {
   flex: 1;
   display: flex;
   flex-direction: column;
