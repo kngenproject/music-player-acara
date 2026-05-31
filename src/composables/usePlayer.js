@@ -30,10 +30,22 @@ export function deleteSavedPlaylist(id) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(saved))
 }
 
+export function renamePlaylist(id, newName) {
+  const saved = getSavedPlaylists()
+  const playlist = saved.find(s => s.id === id)
+  if (playlist) {
+    playlist.name = newName
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(saved))
+    return true
+  }
+  return false
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function usePlayer() {
   const playlist = ref([])
+  const playlistName = ref('Playlist Aktif')
   const currentIndex = ref(-1)
   const isPlaying = ref(false)
   const volume = ref(0.8)
@@ -245,7 +257,7 @@ export function usePlayer() {
     }
   }
 
-  function addFiles(files) {
+  function addFiles(files, folderName = null) {
     const audioTypes = ['audio/mpeg','audio/mp3','audio/wav','audio/ogg','audio/flac','audio/aac','audio/m4a','audio/x-m4a','audio/mp4']
     const newTracks = []
     for (const file of files) {
@@ -257,11 +269,25 @@ export function usePlayer() {
         url: URL.createObjectURL(file),
         size: file.size,
         artist: '',
-        album: ''
+        album: '',
+        folderName: folderName || null
       })
     }
+    
+    // Set nama playlist dari folder jika ada
+    if (folderName && playlist.value.length === 0) {
+      playlistName.value = folderName
+    }
+    
     playlist.value.push(...newTracks)
     if (currentIndex.value === -1 && playlist.value.length > 0) loadTrack(0, false)
+  }
+
+  function loadPlaylistFromSaved(savedPlaylist) {
+    // Bersihkan playlist lama
+    clearPlaylist()
+    playlistName.value = savedPlaylist.name
+    // Note: tracks disini hanya metadata, file audio perlu di-upload ulang
   }
 
   function removeTrack(index) {
@@ -281,6 +307,7 @@ export function usePlayer() {
     playlist.value = []
     currentIndex.value = -1
     isPlaying.value = false
+    playlistName.value = 'Playlist Aktif'
     if (audioEl) { audioEl.pause(); audioEl.src = '' }
   }
 
@@ -310,14 +337,14 @@ export function usePlayer() {
   })
 
   return {
-    playlist, currentIndex, isPlaying, volume, isMuted,
+    playlist, playlistName, currentIndex, isPlaying, volume, isMuted,
     currentTime, duration, isLooping, isLoopingAll, isShuffling,
     fadeDuration, fadePreset, crossfadeEnabled,
     currentTrack, progressPercent,
     play, pause, togglePlay, playNext, playPrev,
     seekTo, setVolume, toggleMute,
     manualFadeOut, manualFadeIn,
-    loadTrack, addFiles, removeTrack, clearPlaylist,
+    loadTrack, addFiles, removeTrack, clearPlaylist, loadPlaylistFromSaved,
     setFadePreset, formatTime
   }
 }

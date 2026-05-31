@@ -1,12 +1,27 @@
 <template>
   <div class="playlist-panel">
     <div class="playlist-header">
-      <span class="playlist-title">Playlist <span class="count">{{ playlist.length }}</span></span>
+      <div class="playlist-title-section">
+        <span class="playlist-title" v-if="!editingName">{{ playlistName || 'Playlist' }} <span class="count">{{ playlist.length }}</span></span>
+        <div class="playlist-edit" v-else>
+          <input 
+            v-model="editedName" 
+            @keydown.enter="savePlaylistName"
+            @keydown.escape="editingName = false"
+            @blur="savePlaylistName"
+            ref="editInputRef"
+            class="edit-input"
+          />
+        </div>
+      </div>
       <div class="header-btns">
-        <button class="hdr-btn" @click="$emit('open-folder')" title="Buka Folder">
+        <button class="hdr-btn" @click="toggleEditName" title="Ubah nama" v-if="playlist.length">
+          ✏️
+        </button>
+        <button class="hdr-btn" @click="$emit('upload-folder')" title="Buka Folder">
           📁
         </button>
-        <button class="hdr-btn" @click="$emit('add-files')" title="Tambah File">
+        <button class="hdr-btn" @click="$emit('upload-files')" title="Tambah File">
           ➕
         </button>
         <button class="hdr-btn danger" @click="$emit('clear')" title="Hapus Semua" v-if="playlist.length">
@@ -39,15 +54,56 @@
     <div class="playlist-empty" v-else>
       <div class="empty-icon">🎵</div>
       <p>Belum ada lagu</p>
-      <button class="add-btn" @click="$emit('open-folder')">Buka Folder</button>
-      <button class="add-btn secondary" @click="$emit('add-files')">Pilih File</button>
+      <button class="add-btn" @click="$emit('upload-folder')">Buka Folder</button>
+      <button class="add-btn secondary" @click="$emit('upload-files')">Pilih File</button>
     </div>
   </div>
 </template>
 
 <script setup>
-defineProps({ playlist: Array, currentIndex: Number, isPlaying: Boolean })
-defineEmits(['play-track', 'remove', 'clear', 'open-folder', 'add-files'])
+import { ref, watch, nextTick } from 'vue'
+
+const props = defineProps({ 
+  playlist: Array, 
+  playlistName: String,
+  currentIndex: Number, 
+  isPlaying: Boolean 
+})
+
+const emit = defineEmits([
+  'play-track', 
+  'remove', 
+  'clear', 
+  'upload-folder', 
+  'upload-files',
+  'rename-playlist'
+])
+
+const editingName = ref(false)
+const editedName = ref(props.playlistName || 'Playlist Aktif')
+const editInputRef = ref(null)
+
+watch(() => props.playlistName, (newVal) => {
+  editedName.value = newVal || 'Playlist Aktif'
+})
+
+function toggleEditName() {
+  editingName.value = !editingName.value
+  if (editingName.value) {
+    nextTick(() => {
+      editInputRef.value?.select()
+      editInputRef.value?.focus()
+    })
+  }
+}
+
+function savePlaylistName() {
+  const newName = editedName.value.trim()
+  if (newName && newName !== props.playlistName) {
+    emit('rename-playlist', newName)
+  }
+  editingName.value = false
+}
 </script>
 
 <style scoped>
@@ -69,12 +125,41 @@ defineEmits(['play-track', 'remove', 'clear', 'open-folder', 'add-files'])
   flex-shrink: 0;
 }
 
+.playlist-title-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
 .playlist-title {
   font-size: 13px;
   font-weight: 700;
   color: var(--text2);
   letter-spacing: 1px;
   text-transform: uppercase;
+}
+
+.playlist-edit {
+  flex: 1;
+}
+
+.edit-input {
+  background: var(--surface2);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  outline: none;
+  width: 100%;
+  max-width: 200px;
+}
+
+.edit-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(232,168,56,0.1);
 }
 
 .count {
@@ -86,7 +171,11 @@ defineEmits(['play-track', 'remove', 'clear', 'open-folder', 'add-files'])
   margin-left: 6px;
 }
 
-.header-btns { display: flex; gap: 6px; }
+.header-btns { 
+  display: flex; 
+  gap: 6px;
+  flex-shrink: 0;
+}
 
 .hdr-btn {
   background: var(--surface2);

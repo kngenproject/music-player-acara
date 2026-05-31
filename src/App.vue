@@ -4,13 +4,34 @@
 
     <!-- Hidden file inputs -->
     <input type="file" ref="fileInput" multiple accept="audio/*" @change="onFilesSelected" style="display:none" />
-    <input type="file" ref="folderInput" webkitdirectory multiple accept="audio/*" @change="onFilesSelected" style="display:none" />
+    <input type="file" ref="folderInput" webkitdirectory multiple accept="audio/*" @change="onFolderSelected" style="display:none" />
 
     <!-- Install Banner -->
     <div class="install-banner" v-if="showInstallBanner">
       <span>📲 Install AcaraPlay ke Home Screen</span>
       <button class="install-btn" @click="installPWA">Install</button>
       <button class="close-banner" @click="showInstallBanner = false">✕</button>
+    </div>
+
+    <!-- Rename Playlist Modal -->
+    <div class="modal-overlay" v-if="showRenameModal" @click.self="showRenameModal = false">
+      <div class="modal">
+        <div class="modal-header">
+          <span>✏️ Ubah Nama Playlist</span>
+          <button class="modal-close" @click="showRenameModal = false">✕</button>
+        </div>
+        <input
+          class="modal-input"
+          v-model="renamePlaylistName"
+          placeholder="Nama playlist baru..."
+          @keydown.enter="confirmRename"
+          ref="renameInputRef"
+        />
+        <div class="modal-actions">
+          <button class="modal-btn cancel" @click="showRenameModal = false">Batal</button>
+          <button class="modal-btn confirm" @click="confirmRename" :disabled="!renamePlaylistName.trim()">Ubah</button>
+        </div>
+      </div>
     </div>
 
     <!-- Save Playlist Modal -->
@@ -52,6 +73,7 @@
               </div>
             </div>
             <div class="drawer-actions">
+              <button class="drawer-edit" @click="openRenameModal(sp.id, sp.name)" title="Ubah nama">✏️</button>
               <button class="drawer-del" @click="deletePlaylist(sp.id)" title="Hapus">🗑️</button>
             </div>
           </div>
@@ -129,7 +151,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { usePlayer, getSavedPlaylists, savePlaylistToStorage, deleteSavedPlaylist } from './composables/usePlayer'
+import { usePlayer, getSavedPlaylists, savePlaylistToStorage, deleteSavedPlaylist, renamePlaylist } from './composables/usePlayer'
 import VolumeSlider from './components/VolumeSlider.vue'
 import PlayerControls from './components/PlayerControls.vue'
 import PlaylistPanel from './components/PlaylistPanel.vue'
@@ -143,17 +165,28 @@ const isPWA = ref(false)
 const isLandscape = ref(false)
 let deferredPrompt = null
 
-// ── Playlist save/load ──────────────────────────────────
+// ── Playlist save/load/rename ──────────────────────────
 const showSaveModal = ref(false)
+const showRenameModal = ref(false)
 const showDrawer = ref(false)
 const savePlaylistName = ref('')
+const renamePlaylistName = ref('')
+const renamePlaylistId = ref(null)
 const saveInputRef = ref(null)
+const renameInputRef = ref(null)
 const savedPlaylists = ref(getSavedPlaylists())
 
 function openSaveModal() {
-  savePlaylistName.value = ''
+  savePlaylistName.value = player.playlistName.value || ''
   showSaveModal.value = true
   nextTick(() => saveInputRef.value?.focus())
+}
+
+function openRenameModal(id, currentName) {
+  renamePlaylistId.value = id
+  renamePlaylistName.value = currentName
+  showRenameModal.value = true
+  nextTick(() => renameInputRef.value?.focus())
 }
 
 function openDrawer() {
@@ -165,8 +198,18 @@ function confirmSave() {
   const name = savePlaylistName.value.trim()
   if (!name) return
   savePlaylistToStorage(name, player.playlist.value)
+  player.playlistName.value = name
   savedPlaylists.value = getSavedPlaylists()
   showSaveModal.value = false
+}
+
+function confirmRename() {
+  const newName = renamePlaylistName.value.trim()
+  if (!newName || !renamePlaylistId.value) return
+  if (renamePlaylist(renamePlaylistId.value, newName)) {
+    savedPlaylists.value = getSavedPlaylists()
+    showRenameModal.value = false
+  }
 }
 
 function deletePlaylist(id) {
@@ -212,6 +255,7 @@ const playerControlsEmits = {
 
 const playlistProps = computed(() => ({
   playlist: player.playlist.value,
+  playlistName: player.playlistName.value,
   currentIndex: player.currentIndex.value,
   isPlaying: player.isPlaying.value
 }))
@@ -220,30 +264,39 @@ const playlistEmits = {
   'play-track': (i) => player.loadTrack(i, true),
   'remove': player.removeTrack,
   'clear': player.clearPlaylist,
-  'open-folder': openFolder,
-  'add-files': openFiles
+  'upload-files': () => fileInput.value?.click(),
+  'upload-folder': () => folderInput.value?.click(),
+  'rename-playlist': openRenameModal
 }
 
-// ── File handling ───────────────────────────────────────
-function openFiles() { fileInput.value?.click() }
-function openFolder() { folderInput.value?.click() }
 function onFilesSelected(e) {
-  player.addFiles(Array.from(e.target.files))
+  const files = Array.from(e.target.files || [])
+  player.addFiles(files, null)
   e.target.value = ''
 }
 
-// ── Orientation detection ───────────────────────────────
-function checkOrientation() {
-  isLandscape.value = window.innerWidth >= 768 && window.innerWidth > window.innerHeight
+function onFolderSelected(e) {
+  const files = Array.from(e.target.files || [])
+  if (files.length === 0) return
+  
+  // Extract folder name from first file path
+  const firstPath = files[0].webkitRelativePath || files[0].name
+  const folderName = firstPath.split('/')[0] || 'Folder'
+  
+  player.addFiles(files, folderName)
+  e.target.value = ''
 }
 
-// ── Keyboard shortcuts ──────────────────────────────────
+function checkOrientation() {
+  isLandscape.value = window.innerHeight < window.innerWidth
+}
+
 function onKeydown(e) {
-  if (e.target.tagName === 'INPUT') return
-  switch (e.key) {
-    case ' ': e.preventDefault(); player.togglePlay(); break
-    case 'ArrowLeft': e.preventDefault(); player.playPrev(); break
-    case 'ArrowRight': e.preventDefault(); player.playNext(); break
+  if (e.target === saveInputRef.value || e.target === renameInputRef.value) return
+  switch(e.code || String.fromCharCode(e.keyCode)) {
+    case 'Space': break // already prevented
+    case 'ArrowLeft': e.preventDefault(); player.seekTo(Math.max(0, player.currentTime.value - 5)); break
+    case 'ArrowRight': e.preventDefault(); player.seekTo(Math.min(player.duration.value, player.currentTime.value + 5)); break
     case 'ArrowUp': e.preventDefault(); player.setVolume(Math.min(1, player.volume.value + 0.05)); break
     case 'ArrowDown': e.preventDefault(); player.setVolume(Math.max(0, player.volume.value - 0.05)); break
     case 'm': case 'M': player.toggleMute(); break
@@ -365,7 +418,7 @@ async function installPWA() {
   overflow: hidden;
 }
 
-/* ── Modal: simpan playlist ── */
+/* ── Modal: simpan/ubah playlist ── */
 .modal-overlay {
   position: fixed; inset: 0; z-index: 100;
   background: rgba(0,0,0,0.7);
@@ -452,6 +505,15 @@ async function installPWA() {
 .drawer-track-more {
   font-size: 11px; color: var(--accent); padding: 2px 4px;
 }
+.drawer-actions {
+  display: flex; gap: 4px;
+}
+.drawer-edit {
+  background: transparent; color: var(--text3); font-size: 18px;
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.drawer-edit:hover { background: rgba(232,168,56,0.15); color: var(--accent); }
 .drawer-del {
   background: transparent; color: var(--text3); font-size: 18px;
   width: 36px; height: 36px; border-radius: 50%;
