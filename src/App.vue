@@ -315,8 +315,10 @@ const playerControlsProps = computed(() => ({
   isLoopingAll: player.isLoopingAll.value,
   isShuffling: player.isShuffling.value,
   crossfadeEnabled: player.crossfadeEnabled.value,
-  fadePreset: player.fadePreset.value,
-  fadeDuration: player.fadeDuration.value,
+  fadeInPreset: player.fadeInPreset.value,
+  fadeOutPreset: player.fadeOutPreset.value,
+  fadeInDuration: player.fadeInDuration.value,
+  fadeOutDuration: player.fadeOutDuration.value,
   formatTime: player.formatTime
 }))
 
@@ -329,8 +331,10 @@ const playerControlsEmits = {
   'toggle-loop-all': () => { player.isLoopingAll.value = !player.isLoopingAll.value },
   'toggle-shuffle': () => { player.isShuffling.value = !player.isShuffling.value },
   'toggle-crossfade': () => { player.crossfadeEnabled.value = !player.crossfadeEnabled.value },
-  'set-fade-preset': player.setFadePreset,
-  'set-fade-duration': (v) => { player.fadeDuration.value = v }
+  'set-fade-in-preset': player.setFadeInPreset,
+  'set-fade-in-duration': (v) => { player.fadeInDuration.value = v },
+  'set-fade-out-preset': player.setFadeOutPreset,
+  'set-fade-out-duration': (v) => { player.fadeOutDuration.value = v }
 }
 
 const playlistProps = computed(() => ({

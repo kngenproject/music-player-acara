@@ -72,20 +72,36 @@
       </div>
 
       <div class="fade-settings">
-        <span class="fade-label">FADE</span>
+        <span class="fade-label">IN</span>
         <div class="fade-presets">
           <button v-for="p in presets" :key="p.value"
-            class="preset-btn" :class="{ active: fadePreset === p.value }"
-            @click="$emit('set-fade-preset', p.value)">{{ p.label }}</button>
+            class="preset-btn" :class="{ active: fadeInPreset === p.value }"
+            @click="$emit('set-fade-in-preset', p.value)">{{ p.label }}</button>
         </div>
-        <div class="fade-custom" v-if="fadePreset === 'custom'">
+        <div class="fade-custom" v-if="fadeInPreset === 'custom'">
           <input type="number" min="0.5" max="30" step="0.5"
-            :value="fadeDuration"
-            @input="$emit('set-fade-duration', parseFloat($event.target.value))"
+            :value="fadeInDuration"
+            @input="$emit('set-fade-in-duration', parseFloat($event.target.value))"
             class="custom-input" />
           <span class="fade-unit">s</span>
         </div>
-        <span class="fade-val" v-else>{{ fadeDuration }}s</span>
+        <span class="fade-val" v-else>{{ fadeInDuration }}s</span>
+      </div>
+      <div class="fade-settings">
+        <span class="fade-label">OUT</span>
+        <div class="fade-presets">
+          <button v-for="p in presets" :key="p.value"
+            class="preset-btn" :class="{ active: fadeOutPreset === p.value }"
+            @click="$emit('set-fade-out-preset', p.value)">{{ p.label }}</button>
+        </div>
+        <div class="fade-custom" v-if="fadeOutPreset === 'custom'">
+          <input type="number" min="0.5" max="30" step="0.5"
+            :value="fadeOutDuration"
+            @input="$emit('set-fade-out-duration', parseFloat($event.target.value))"
+            class="custom-input" />
+          <span class="fade-unit">s</span>
+        </div>
+        <span class="fade-val" v-else>{{ fadeOutDuration }}s</span>
       </div>
     </div>
   </div>
@@ -105,15 +121,17 @@ const props = defineProps({
   isLoopingAll: Boolean,
   isShuffling: Boolean,
   crossfadeEnabled: Boolean,
-  fadePreset: String,
-  fadeDuration: Number,
+  fadeInPreset: String,
+  fadeOutPreset: String,
+  fadeInDuration: Number,
+  fadeOutDuration: Number,
   formatTime: Function
 })
 
 const emit = defineEmits([
   'toggle-play','prev','next',
   'toggle-loop','toggle-loop-all','toggle-shuffle','toggle-crossfade',
-  'seek','set-fade-preset','set-fade-duration'
+  'seek','set-fade-in-preset','set-fade-in-duration','set-fade-out-preset','set-fade-out-duration'
 ])
 
 const seekRef = ref(null)

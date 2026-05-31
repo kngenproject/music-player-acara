@@ -59,8 +59,10 @@ export function usePlayer() {
   const isLooping = ref(false)
   const isLoopingAll = ref(false)
   const isShuffling = ref(false)
-  const fadeDuration = ref(3)
-  const fadePreset = ref('3')
+  const fadeInDuration = ref(3)
+  const fadeOutDuration = ref(3)
+  const fadeInPreset = ref('3')
+  const fadeOutPreset = ref('3')
   const crossfadeEnabled = ref(true)
 
   let audioCtx = null
@@ -104,7 +106,7 @@ export function usePlayer() {
     currentTime.value = audioEl?.currentTime || 0
     if (crossfadeEnabled.value && audioEl && duration.value > 0) {
       const timeLeft = duration.value - audioEl.currentTime
-      if (timeLeft <= fadeDuration.value && timeLeft > 0 && isPlaying.value) {
+      if (timeLeft <= fadeOutDuration.value && timeLeft > 0 && isPlaying.value) {
         if (!crossfadeTimer) { crossfadeTimer = true }
       }
     }
@@ -170,8 +172,7 @@ export function usePlayer() {
         await el.play()
         isPlaying.value = true
         setupMediaSession(track)
-        fadeVolumeTo(isMuted.value ? 0 : volume.value, fadeDuration.value)
-      } catch (e) { console.error('Play error:', e) }
+        fadeVolumeTo(isMuted.value ? 0 : volume.value, fadeInDuration.value)
     }
   }
 
@@ -184,13 +185,13 @@ export function usePlayer() {
     isPlaying.value = true
     const track = activePlaylist.value[currentIndex.value]
     if (track) setupMediaSession(track)
-    fadeVolumeTo(isMuted.value ? 0 : volume.value, fadeDuration.value)
+    fadeVolumeTo(isMuted.value ? 0 : volume.value, fadeInDuration.value)
   }
 
   function pause() {
     if (!audioEl || !isPlaying.value) return
     cancelFade()
-    fadeVolumeTo(0, fadeDuration.value, () => {
+    fadeVolumeTo(0, fadeOutDuration.value, () => {
       audioEl?.pause()
       isPlaying.value = false
     })
@@ -241,8 +242,7 @@ export function usePlayer() {
 
   function manualFadeOut() {
     cancelFade()
-    fadeVolumeTo(0, fadeDuration.value, () => {
-      if (audioEl) audioEl.pause()
+    fadeVolumeTo(0, fadeOutDuration.value, () => {
       isPlaying.value = false
     })
   }
@@ -254,10 +254,10 @@ export function usePlayer() {
       audioEl.volume = 0
       audioEl.play().then(() => {
         isPlaying.value = true
-        fadeVolumeTo(isMuted.value ? 0 : volume.value, fadeDuration.value)
+        fadeVolumeTo(isMuted.value ? 0 : volume.value, fadeInDuration.value)
       })
     } else {
-      fadeVolumeTo(isMuted.value ? 0 : volume.value, fadeDuration.value)
+      fadeVolumeTo(isMuted.value ? 0 : volume.value, fadeInDuration.value)
     }
   }
 
@@ -350,9 +350,14 @@ export function usePlayer() {
     }
   }
 
-  function setFadePreset(val) {
-    fadePreset.value = val
-    if (val !== 'custom') fadeDuration.value = parseFloat(val)
+  function setFadeInPreset(val) {
+    fadeInPreset.value = val
+    if (val !== 'custom') fadeInDuration.value = parseFloat(val)
+  }
+
+  function setFadeOutPreset(val) {
+    fadeOutPreset.value = val
+    if (val !== 'custom') fadeOutDuration.value = parseFloat(val)
   }
 
   const currentTrack = computed(() =>
@@ -385,13 +390,13 @@ export function usePlayer() {
   return {
     playlists, activePlaylistId, activePlaylist, currentIndex, isPlaying, volume, isMuted,
     currentTime, duration, isLooping, isLoopingAll, isShuffling,
-    fadeDuration, fadePreset, crossfadeEnabled,
+    fadeInDuration, fadeOutDuration, fadeInPreset, fadeOutPreset, crossfadeEnabled,
     currentTrack, progressPercent,
     play, pause, togglePlay, playNext, playPrev,
     seekTo, setVolume, toggleMute,
     manualFadeOut, manualFadeIn,
     loadTrack, addFiles, removeTrack, clearPlaylist,
-    setFadePreset, formatTime,
+    setFadeInPreset, setFadeOutPreset, formatTime,
     createNewPlaylist, renameActivePlaylist, switchPlaylist, deletePlaylist
   }
 }
