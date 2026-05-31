@@ -17,7 +17,6 @@ export function savePlaylistToStorage(name, tracks) {
     savedAt: new Date().toISOString(),
     tracks: tracks.map(t => ({ name: t.name, filename: t.filename, size: t.size }))
   }
-  // Ganti jika nama sama
   const idx = saved.findIndex(s => s.name === name)
   if (idx >= 0) saved[idx] = entry
   else saved.push(entry)
@@ -42,14 +41,14 @@ export function renamePlaylist(id, newName) {
 }
 
 export function getPlaylistById(id) {
-  const saved = getSavedPlaylists()
-  return saved.find(s => s.id === id)
+  return getSavedPlaylists().find(s => s.id === id)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function usePlayer() {
-  const playlists = ref({}) // { playlistId: { name, tracks } }
+  // playlists: { [id]: { name: string, tracks: Track[] } }
+  const playlists = ref({})
   const activePlaylistId = ref(null)
   const currentIndex = ref(-1)
   const isPlaying = ref(false)
@@ -278,39 +277,38 @@ export function usePlayer() {
         folderName: folderName || null
       })
     }
-    
-    // Create/set playlist
-    if (!activePlaylistId.value) {
-      activePlaylistId.value = Date.now()
+
+    if (!activePlaylistId.value || !playlists.value[activePlaylistId.value]) {
+      const id = Date.now()
+      playlists.value[id] = { name: folderName || 'Playlist', tracks: [] }
+      activePlaylistId.value = id
     }
-    
-    if (!playlists.value[activePlaylistId.value]) {
-      playlists.value[activePlaylistId.value] = []
-    }
-    
-    playlists.value[activePlaylistId.value].push(...newTracks)
-    
+
+    playlists.value[activePlaylistId.value].tracks.push(...newTracks)
+
     if (currentIndex.value === -1 && activePlaylist.value.length > 0) loadTrack(0, false)
   }
 
   function removeTrack(index) {
-    if (!activePlaylist.value[index]) return
-    const removed = activePlaylist.value[index]
+    const tracks = playlists.value[activePlaylistId.value]?.tracks
+    if (!tracks || !tracks[index]) return
+    const removed = tracks[index]
     URL.revokeObjectURL(removed.url)
-    activePlaylist.value.splice(index, 1)
+    tracks.splice(index, 1)
     if (currentIndex.value === index) {
-      if (activePlaylist.value.length === 0) { currentIndex.value = -1; isPlaying.value = false }
-      else loadTrack(Math.min(index, activePlaylist.value.length - 1), isPlaying.value)
+      if (tracks.length === 0) { currentIndex.value = -1; isPlaying.value = false }
+      else loadTrack(Math.min(index, tracks.length - 1), isPlaying.value)
     } else if (currentIndex.value > index) {
       currentIndex.value--
     }
   }
 
   function clearPlaylist() {
-    if (!activePlaylistId.value) return
-    activePlaylist.value.forEach(t => URL.revokeObjectURL(t.url))
+    if (!activePlaylistId.value || !playlists.value[activePlaylistId.value]) return
+    playlists.value[activePlaylistId.value].tracks.forEach(t => URL.revokeObjectURL(t.url))
     delete playlists.value[activePlaylistId.value]
-    activePlaylistId.value = null
+    const remaining = Object.keys(playlists.value)
+    activePlaylistId.value = remaining.length > 0 ? remaining[0] : null
     currentIndex.value = -1
     isPlaying.value = false
     if (audioEl) { audioEl.pause(); audioEl.src = '' }
@@ -318,9 +316,17 @@ export function usePlayer() {
 
   function createNewPlaylist(name) {
     const id = Date.now()
-    playlists.value[id] = []
+    playlists.value[id] = { name: name || 'Playlist Baru', tracks: [] }
     activePlaylistId.value = id
+    currentIndex.value = -1
+    isPlaying.value = false
+    if (audioEl) { audioEl.pause(); audioEl.src = '' }
     return id
+  }
+
+  function renameActivePlaylist(newName) {
+    if (!activePlaylistId.value || !playlists.value[activePlaylistId.value]) return
+    playlists.value[activePlaylistId.value].name = newName
   }
 
   function switchPlaylist(playlistId) {
@@ -333,16 +339,15 @@ export function usePlayer() {
 
   function deletePlaylist(playlistId) {
     if (!playlists.value[playlistId]) return
-    playlists.value[playlistId].forEach(t => URL.revokeObjectURL(t.url))
+    playlists.value[playlistId].tracks.forEach(t => URL.revokeObjectURL(t.url))
     delete playlists.value[playlistId]
     if (activePlaylistId.value === playlistId) {
       const remaining = Object.keys(playlists.value)
       activePlaylistId.value = remaining.length > 0 ? remaining[0] : null
+      currentIndex.value = -1
+      isPlaying.value = false
+      if (audioEl) { audioEl.pause(); audioEl.src = '' }
     }
-  }
-
-  function getPlaylistName(playlistId) {
-    return playlists.value[playlistId] ? 'Playlist' : null
   }
 
   function setFadePreset(val) {
@@ -355,8 +360,8 @@ export function usePlayer() {
   )
 
   const activePlaylist = computed(() => {
-    if (!activePlaylistId.value) return []
-    return playlists.value[activePlaylistId.value] || []
+    if (!activePlaylistId.value || !playlists.value[activePlaylistId.value]) return []
+    return playlists.value[activePlaylistId.value].tracks || []
   })
 
   const progressPercent = computed(() =>
@@ -373,7 +378,7 @@ export function usePlayer() {
   onUnmounted(() => {
     cancelFade()
     Object.values(playlists.value).forEach(pl => {
-      pl.forEach(t => URL.revokeObjectURL(t.url))
+      pl.tracks.forEach(t => URL.revokeObjectURL(t.url))
     })
   })
 
@@ -386,6 +391,7 @@ export function usePlayer() {
     seekTo, setVolume, toggleMute,
     manualFadeOut, manualFadeIn,
     loadTrack, addFiles, removeTrack, clearPlaylist,
-    setFadePreset, formatTime, createNewPlaylist, switchPlaylist, deletePlaylist, getPlaylistName
+    setFadePreset, formatTime,
+    createNewPlaylist, renameActivePlaylist, switchPlaylist, deletePlaylist
   }
 }

@@ -220,12 +220,10 @@ function deletePlaylist(id) {
 function loadSavedPlaylist(playlistId, playlistName) {
   const saved = getSavedPlaylists().find(p => p.id === playlistId)
   if (!saved || !saved.tracks.length) return
-  
-  // Create new playlist for loaded data
+
   const newId = player.createNewPlaylist(playlistName)
-  player.switchPlaylist(newId)
-  
-  // Create placeholder tracks with metadata
+
+  // Create placeholder tracks with metadata (no real URL — file not re-uploaded)
   const tracks = saved.tracks.map((t, idx) => ({
     id: Date.now() + idx,
     name: t.name,
@@ -236,8 +234,8 @@ function loadSavedPlaylist(playlistId, playlistName) {
     album: '',
     isSavedReference: true
   }))
-  
-  player.playlists.value[newId] = tracks
+
+  player.playlists.value[newId].tracks = tracks
   showDrawer.value = false
 }
 
@@ -292,7 +290,9 @@ const playlistEmits = {
   'upload-files': () => fileInput.value?.click(),
   'upload-folder': () => folderInput.value?.click(),
   'switch-playlist': player.switchPlaylist,
-  'delete-playlist': player.deletePlaylist
+  'delete-playlist': player.deletePlaylist,
+  'new-playlist': () => player.createNewPlaylist('Playlist Baru'),
+  'rename-playlist': (name) => player.renameActivePlaylist(name)
 }
 
 function onFilesSelected(e) {
@@ -307,12 +307,11 @@ function onFilesSelected(e) {
 function onFolderSelected(e) {
   const files = Array.from(e.target.files || [])
   if (files.length === 0) return
-  
-  // Extract folder name from first file path
+
   const firstPath = files[0].webkitRelativePath || files[0].name
   const folderName = firstPath.split('/')[0] || 'Folder'
-  
-  // Create new playlist untuk folder ini
+
+  // Buat playlist baru untuk folder ini, lalu tambah file
   player.createNewPlaylist(folderName)
   player.addFiles(files, folderName)
   e.target.value = ''
