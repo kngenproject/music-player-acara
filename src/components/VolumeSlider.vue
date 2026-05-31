@@ -1,22 +1,22 @@
 <template>
   <div class="volume-panel" :class="{ landscape: isLandscape, inline: isInline }">
-    <!-- Mute button -->
-    <button class="mute-btn" @click="$emit('toggle-mute')" :class="{ muted: isMuted }" aria-label="Toggle mute">
-      <svg v-if="isMuted" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06A8.99 8.99 0 0 0 17.73 19L19 20.27 20.27 19 5.27 4 4.27 3zM12 4 9.91 6.09 12 8.18V4z"/>
-      </svg>
-      <svg v-else-if="volume > 0.6" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
-      </svg>
-      <svg v-else-if="volume > 0.2" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M18.5 12A4.5 4.5 0 0 0 16 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/>
-      </svg>
-      <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M7 9v6h4l5 5V4l-5 5H7z"/>
-      </svg>
-    </button>
 
-    <div class="slider-wrap">
+    <!-- Baris 1: Volume control -->
+    <div class="volume-row">
+      <button class="mute-btn" @click="$emit('toggle-mute')" :class="{ muted: isMuted }" aria-label="Toggle mute">
+        <svg v-if="isMuted" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.796 8.796 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06A8.99 8.99 0 0 0 17.73 19L19 20.27 20.27 19 5.27 4 4.27 3zM12 4 9.91 6.09 12 8.18V4z"/>
+        </svg>
+        <svg v-else-if="volume > 0.6" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+        </svg>
+        <svg v-else-if="volume > 0.2" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M18.5 12A4.5 4.5 0 0 0 16 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/>
+        </svg>
+        <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M7 9v6h4l5 5V4l-5 5H7z"/>
+        </svg>
+      </button>
       <div class="vol-label">{{ Math.round(volume * 100) }}<span>%</span></div>
       <div class="slider-track-wrap" @click="onTrackClick" @touchstart.prevent="onTrackTouch" ref="trackRef">
         <div class="slider-track">
@@ -29,7 +29,8 @@
       </div>
     </div>
 
-    <div class="fade-btns">
+    <!-- Baris 2: Fade buttons -->
+    <div class="fade-row">
       <button class="fade-btn fade-in-btn" @click="$emit('fade-in')" title="Fade In" aria-label="Fade In">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
@@ -45,6 +46,7 @@
         <span>OUT</span>
       </button>
     </div>
+
   </div>
 </template>
 
@@ -62,29 +64,20 @@ const emit = defineEmits(['update:volume','toggle-mute','fade-in','fade-out'])
 const trackRef = ref(null)
 let dragging = false
 
-const fillStyle = computed(() =>
-  (props.isLandscape || props.isInline)
-    ? { width: props.volume * 100 + '%', height: '100%', top: 0, left: 0, bottom: 'auto', right: 'auto' }
-    : { height: props.volume * 100 + '%' }
-)
+const fillStyle = computed(() => ({
+  width: props.volume * 100 + '%', height: '100%', top: 0, left: 0, bottom: 'auto', right: 'auto'
+}))
 
-const thumbStyle = computed(() =>
-  (props.isLandscape || props.isInline)
-    ? { left: props.volume * 100 + '%', bottom: 'auto', top: '50%', transform: 'translate(-50%, -50%)' }
-    : { bottom: props.volume * 100 + '%' }
-)
+const thumbStyle = computed(() => ({
+  left: props.volume * 100 + '%', bottom: 'auto', top: '50%', transform: 'translate(-50%, -50%)'
+}))
 
 function getVolFromEvent(e) {
   const track = trackRef.value
   if (!track) return props.volume
   const rect = track.getBoundingClientRect()
-  if (props.isLandscape || props.isInline) {
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX
-    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
-  } else {
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY
-    return Math.max(0, Math.min(1, 1 - (clientY - rect.top) / rect.height))
-  }
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX
+  return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
 }
 
 function onTrackClick(e) { emit('update:volume', getVolFromEvent(e)) }
@@ -108,68 +101,62 @@ function startDrag(e) {
 </script>
 
 <style scoped>
-/* ══ PORTRAIT: panel vertikal kiri ══ */
+/* ══ BASE: dua baris horizontal ══ */
 .volume-panel {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 10px;
+  gap: 0;
   background: var(--surface);
-  border-right: 1px solid var(--border);
-  width: 68px;
-  height: 100%;
+  border-top: 1px solid var(--border);
   flex-shrink: 0;
+}
+
+/* Baris 1: Volume */
+.volume-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
 }
 
 .mute-btn {
   background: var(--surface2);
   border-radius: 50%;
-  width: 44px; height: 44px;
+  width: 38px; height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text2);
   border: 1px solid var(--border2);
   flex-shrink: 0;
+  transition: all 0.15s;
 }
 .mute-btn:hover { background: var(--surface3); color: var(--text); }
 .mute-btn.muted { color: var(--text3); }
 
-.slider-wrap {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 0;
-}
-
 .vol-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--accent);
-  letter-spacing: 0.3px;
+  min-width: 34px;
+  text-align: right;
   flex-shrink: 0;
-  line-height: 1;
 }
 .vol-label span { font-size: 9px; opacity: 0.7; }
 
 .slider-track-wrap {
   flex: 1;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  cursor: pointer;
   padding: 8px 0;
-  min-height: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
 }
 
 .slider-track {
   position: relative;
-  width: 18px;
-  height: 100%;
+  width: 100%;
+  height: 16px;
   background: var(--surface3);
   border-radius: 10px;
   overflow: visible;
@@ -178,16 +165,16 @@ function startDrag(e) {
 
 .slider-fill {
   position: absolute;
-  bottom: 0; left: 0; right: 0;
-  background: linear-gradient(to top, var(--accent2), var(--accent));
+  top: 0; bottom: 0; left: 0;
+  background: linear-gradient(90deg, var(--accent2), var(--accent));
   border-radius: 10px;
-  transition: height 0.05s, width 0.05s;
+  transition: width 0.05s;
 }
 
 .slider-thumb {
   position: absolute;
-  left: 50%;
-  transform: translate(-50%, 50%);
+  top: 50%;
+  transform: translate(-50%, -50%);
   width: 26px; height: 26px;
   background: var(--bg);
   border-radius: 50%;
@@ -195,30 +182,30 @@ function startDrag(e) {
   border: 3px solid var(--accent);
   cursor: grab;
   z-index: 2;
-  transition: bottom 0.05s, left 0.05s, top 0.05s;
+  transition: left 0.05s;
 }
-.slider-thumb:active { cursor: grabbing; transform: translate(-50%, 50%) scale(1.15); }
+.slider-thumb:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.15); }
 
-.fade-btns {
+/* Baris 2: Fade buttons */
+.fade-row {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-  flex-shrink: 0;
+  gap: 8px;
+  padding: 8px 14px;
 }
 
 .fade-btn {
+  flex: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 8px 4px;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
   border-radius: var(--radius-sm);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 1px;
-  width: 100%;
   border: 1px solid transparent;
+  transition: all 0.15s;
 }
 .fade-in-btn {
   background: var(--success-soft);
@@ -233,111 +220,21 @@ function startDrag(e) {
 }
 .fade-out-btn:hover { background: rgba(232,85,85,0.18); }
 
-/* ══ INLINE: strip horizontal di tab now playing ══ */
+/* ══ LANDSCAPE & INLINE: tetap dua baris, padding lebih kecil ══ */
+.volume-panel.landscape,
 .volume-panel.inline {
-  flex-direction: row;
-  width: 100%;
-  height: auto;
-  padding: 10px 16px;
-  gap: 12px;
-  border-right: none;
   border-top: 1px solid var(--border);
-  align-items: center;
-  flex-shrink: 0;
 }
-.volume-panel.inline .mute-btn {
-  width: 38px; height: 38px;
+.volume-panel.landscape .volume-row,
+.volume-panel.inline .volume-row {
+  padding: 8px 14px;
 }
-.volume-panel.inline .slider-wrap {
-  flex: 1;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  width: auto;
-  min-height: auto;
+.volume-panel.landscape .fade-row,
+.volume-panel.inline .fade-row {
+  padding: 6px 14px;
 }
-.volume-panel.inline .vol-label {
-  font-size: 11px;
-  min-width: 32px;
-  text-align: right;
-}
-.volume-panel.inline .slider-track-wrap {
-  flex: 1;
-  height: auto;
-  padding: 0;
-  align-items: center;
-}
-.volume-panel.inline .slider-track {
-  width: 100%;
-  height: 16px;
-}
-.volume-panel.inline .fade-btns {
-  flex-direction: row;
-  gap: 6px;
-  width: auto;
-}
+.volume-panel.landscape .fade-btn,
 .volume-panel.inline .fade-btn {
-  flex-direction: row;
-  padding: 5px 10px;
-  gap: 5px;
-  width: auto;
-  font-size: 9px;
-}
-/* ══ LANDSCAPE: strip horizontal bawah ══ */
-.volume-panel.landscape {
-  flex-direction: row;
-  width: 100%;
-  height: 60px;
-  padding: 0 16px;
-  gap: 14px;
-  border-right: none;
-  border-top: 1px solid var(--border);
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.volume-panel.landscape .mute-btn {
-  width: 38px; height: 38px;
-}
-
-.volume-panel.landscape .slider-wrap {
-  flex: 1;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  width: auto;
-  min-height: auto;
-}
-
-.volume-panel.landscape .vol-label {
-  font-size: 11px;
-  min-width: 32px;
-  text-align: right;
-}
-
-.volume-panel.landscape .slider-track-wrap {
-  flex: 1;
-  height: auto;
-  padding: 0;
-  align-items: center;
-}
-
-.volume-panel.landscape .slider-track {
-  width: 100%;
-  height: 16px;
-}
-
-.volume-panel.landscape .fade-btns {
-  flex-direction: row;
-  gap: 6px;
-  width: auto;
-}
-
-.volume-panel.landscape .fade-btn {
-  flex-direction: row;
-  padding: 5px 10px;
-  gap: 5px;
-  width: auto;
-  font-size: 9px;
+  padding: 6px 10px;
 }
 </style>

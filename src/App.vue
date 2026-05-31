@@ -95,7 +95,6 @@
     <!-- ── PORTRAIT ── -->
     <template v-if="!isLandscape">
       <div class="main-layout portrait-layout">
-        <div class="right-content">
           <div class="app-header">
             <div class="app-logo">
               <span class="logo-icon">♪</span>
@@ -155,7 +154,6 @@
             </div>
             <PlaylistPanel v-bind="playlistProps" v-on="playlistEmits" />
           </div>
-        </div>
       </div>
     </template>
 
@@ -570,11 +568,6 @@ async function installPWA() {
 
 /* Portrait */
 .portrait-layout {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-}
-.right-content {
   flex: 1;
   display: flex;
   flex-direction: column;
