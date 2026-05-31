@@ -13,66 +13,73 @@
 
     <!-- Main Layout -->
     <div class="main-layout">
-      <!-- Volume Slider (Left) -->
-      <VolumeSlider
-        :volume="player.volume.value"
-        :isMuted="player.isMuted.value"
-        @update:volume="player.setVolume"
-        @toggle-mute="player.toggleMute"
-        @fade-in="player.manualFadeIn"
-        @fade-out="player.manualFadeOut"
+
+      <!-- KOLOM KIRI: Volume + Header + Controls (tablet: left panel) -->
+      <div class="tablet-left">
+        <!-- Volume Slider (kiri di portrait, atas di landscape) -->
+        <VolumeSlider
+          :volume="player.volume.value"
+          :isMuted="player.isMuted.value"
+          :isLandscape="isLandscape"
+          @update:volume="player.setVolume"
+          @toggle-mute="player.toggleMute"
+          @fade-in="player.manualFadeIn"
+          @fade-out="player.manualFadeOut"
+        />
+
+        <!-- Right Content -->
+        <div class="right-content">
+          <!-- Header -->
+          <div class="app-header">
+            <div class="app-logo">🎵 AcaraPlay</div>
+            <div class="header-status">
+              <span class="landscape-badge" v-if="isLandscape">⬛ Tablet</span>
+              <span class="pwa-badge" v-if="isPWA">PWA</span>
+              <span class="status-dot" :class="{ playing: player.isPlaying.value }"></span>
+            </div>
+          </div>
+
+          <!-- Player Controls -->
+          <PlayerControls
+            :trackName="player.currentTrack.value?.name"
+            :isPlaying="player.isPlaying.value"
+            :hasTrack="player.currentIndex.value >= 0"
+            :currentTime="player.currentTime.value"
+            :duration="player.duration.value"
+            :progressPercent="player.progressPercent.value"
+            :isLooping="player.isLooping.value"
+            :isLoopingAll="player.isLoopingAll.value"
+            :isShuffling="player.isShuffling.value"
+            :crossfadeEnabled="player.crossfadeEnabled.value"
+            :fadePreset="player.fadePreset.value"
+            :fadeDuration="player.fadeDuration.value"
+            :formatTime="player.formatTime"
+            @toggle-play="player.togglePlay"
+            @prev="player.playPrev"
+            @next="player.playNext"
+            @seek="player.seekTo"
+            @toggle-loop="player.isLooping.value = !player.isLooping.value"
+            @toggle-loop-all="player.isLoopingAll.value = !player.isLoopingAll.value"
+            @toggle-shuffle="player.isShuffling.value = !player.isShuffling.value"
+            @toggle-crossfade="player.crossfadeEnabled.value = !player.crossfadeEnabled.value"
+            @set-fade-preset="player.setFadePreset"
+            @set-fade-duration="player.fadeDuration.value = $event"
+          />
+        </div>
+      </div>
+
+      <!-- KOLOM KANAN: Playlist (muncul penuh di tablet landscape) -->
+      <PlaylistPanel
+        :playlist="player.playlist.value"
+        :currentIndex="player.currentIndex.value"
+        :isPlaying="player.isPlaying.value"
+        @play-track="(i) => player.loadTrack(i, true)"
+        @remove="player.removeTrack"
+        @clear="player.clearPlaylist"
+        @open-folder="openFolder"
+        @add-files="openFiles"
       />
 
-      <!-- Right Content -->
-      <div class="right-content">
-        <!-- Header -->
-        <div class="app-header">
-          <div class="app-logo">🎵 AcaraPlay</div>
-          <div class="header-status">
-            <span class="pwa-badge" v-if="isPWA">PWA</span>
-            <span class="status-dot" :class="{ playing: player.isPlaying.value }"></span>
-          </div>
-        </div>
-
-        <!-- Player Controls -->
-        <PlayerControls
-          :trackName="player.currentTrack.value?.name"
-          :isPlaying="player.isPlaying.value"
-          :hasTrack="player.currentIndex.value >= 0"
-          :currentTime="player.currentTime.value"
-          :duration="player.duration.value"
-          :progressPercent="player.progressPercent.value"
-          :isLooping="player.isLooping.value"
-          :isLoopingAll="player.isLoopingAll.value"
-          :isShuffling="player.isShuffling.value"
-          :crossfadeEnabled="player.crossfadeEnabled.value"
-          :fadePreset="player.fadePreset.value"
-          :fadeDuration="player.fadeDuration.value"
-          :formatTime="player.formatTime"
-          @toggle-play="player.togglePlay"
-          @prev="player.playPrev"
-          @next="player.playNext"
-          @seek="player.seekTo"
-          @toggle-loop="player.isLooping.value = !player.isLooping.value"
-          @toggle-loop-all="player.isLoopingAll.value = !player.isLoopingAll.value"
-          @toggle-shuffle="player.isShuffling.value = !player.isShuffling.value"
-          @toggle-crossfade="player.crossfadeEnabled.value = !player.crossfadeEnabled.value"
-          @set-fade-preset="player.setFadePreset"
-          @set-fade-duration="player.fadeDuration.value = $event"
-        />
-
-        <!-- Playlist -->
-        <PlaylistPanel
-          :playlist="player.playlist.value"
-          :currentIndex="player.currentIndex.value"
-          :isPlaying="player.isPlaying.value"
-          @play-track="(i) => player.loadTrack(i, true)"
-          @remove="player.removeTrack"
-          @clear="player.clearPlaylist"
-          @open-folder="openFolder"
-          @add-files="openFiles"
-        />
-      </div>
     </div>
   </div>
 </template>
@@ -90,6 +97,7 @@ const fileInput = ref(null)
 const folderInput = ref(null)
 const showInstallBanner = ref(false)
 const isPWA = ref(false)
+const isLandscape = ref(false)
 let deferredPrompt = null
 
 function openFiles() { fileInput.value?.click() }
@@ -99,6 +107,10 @@ function onFilesSelected(e) {
   const files = Array.from(e.target.files)
   player.addFiles(files)
   e.target.value = ''
+}
+
+function checkOrientation() {
+  isLandscape.value = window.innerWidth >= 768 && window.innerWidth > window.innerHeight
 }
 
 // Keyboard shortcuts
@@ -118,6 +130,8 @@ function onKeydown(e) {
 
 onMounted(() => {
   window.addEventListener('keydown', onKeydown)
+  window.addEventListener('resize', checkOrientation)
+  checkOrientation()
 
   // PWA detection
   if (window.matchMedia('(display-mode: standalone)').matches) {
@@ -136,6 +150,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('resize', checkOrientation)
 })
 
 async function installPWA() {
@@ -170,7 +185,6 @@ async function installPWA() {
   color: var(--accent);
   flex-shrink: 0;
 }
-
 .install-banner span { flex: 1; }
 
 .install-btn {
@@ -194,10 +208,16 @@ async function installPWA() {
   justify-content: center;
 }
 
+/* Portrait default: volume kiri, content kanan */
 .main-layout {
   flex: 1;
   display: flex;
   overflow: hidden;
+}
+
+/* tablet-left = volume panel + right-content, stack vertikal */
+.tablet-left {
+  display: contents; /* portrait: tidak berubah, elemen langsung ke main-layout */
 }
 
 .right-content {
@@ -227,17 +247,25 @@ async function installPWA() {
 .header-status {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
-.pwa-badge {
+.pwa-badge, .landscape-badge {
   font-size: 10px;
   font-weight: 700;
-  background: rgba(232,168,56,0.15);
-  color: var(--accent);
   padding: 2px 8px;
   border-radius: 10px;
   letter-spacing: 1px;
+}
+
+.pwa-badge {
+  background: rgba(232,168,56,0.15);
+  color: var(--accent);
+}
+
+.landscape-badge {
+  background: rgba(64,192,112,0.15);
+  color: var(--success);
 }
 
 .status-dot {
@@ -256,5 +284,28 @@ async function installPWA() {
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
+}
+
+/* ── Tablet Landscape ── */
+@media (min-width: 768px) and (orientation: landscape) {
+  .main-layout {
+    display: grid !important;
+    grid-template-columns: 400px 1fr;
+    grid-template-rows: 1fr;
+  }
+
+  /* tablet-left: kolom kiri, volume di bawah controls */
+  .tablet-left {
+    display: flex !important;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  /* right-content mengisi sisa kolom kiri */
+  .right-content {
+    flex: 1;
+    order: -1; /* header + controls di atas volume */
+  }
 }
 </style>

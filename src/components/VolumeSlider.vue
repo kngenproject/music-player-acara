@@ -1,5 +1,5 @@
 <template>
-  <div class="volume-panel">
+  <div class="volume-panel" :class="{ landscape: isLandscape }">
     <button class="mute-btn" @click="$emit('toggle-mute')" :class="{ muted: isMuted }">
       <span v-if="isMuted">🔇</span>
       <span v-else-if="volume > 0.6">🔊</span>
@@ -9,12 +9,25 @@
 
     <div class="slider-wrap">
       <div class="vol-label">{{ Math.round(volume * 100) }}%</div>
-      <div class="slider-track-wrap" @click="onTrackClick" ref="trackRef">
+      <div
+        class="slider-track-wrap"
+        @click="onTrackClick"
+        ref="trackRef"
+      >
         <div class="slider-track">
-          <div class="slider-fill" :style="{ height: volume * 100 + '%' }"></div>
+          <!-- Portrait: fill dari bawah ke atas (height%) -->
+          <!-- Landscape: fill dari kiri ke kanan (width%) -->
+          <div
+            class="slider-fill"
+            :style="isLandscape
+              ? { width: volume * 100 + '%', height: '100%', bottom: 0, left: 0 }
+              : { height: volume * 100 + '%' }"
+          ></div>
           <div
             class="slider-thumb"
-            :style="{ bottom: volume * 100 + '%' }"
+            :style="isLandscape
+              ? { left: volume * 100 + '%', bottom: 'auto', top: '50%', transform: 'translate(-50%, -50%)' }
+              : { bottom: volume * 100 + '%' }"
             @mousedown="startDrag"
             @touchstart.prevent="startDrag"
           ></div>
@@ -44,7 +57,11 @@
 <script setup>
 import { ref } from 'vue'
 
-const props = defineProps({ volume: Number, isMuted: Boolean })
+const props = defineProps({
+  volume: Number,
+  isMuted: Boolean,
+  isLandscape: { type: Boolean, default: false }
+})
 const emit = defineEmits(['update:volume', 'toggle-mute', 'fade-in', 'fade-out'])
 
 const trackRef = ref(null)
@@ -54,9 +71,18 @@ function getVolFromEvent(e) {
   const track = trackRef.value
   if (!track) return props.volume
   const rect = track.getBoundingClientRect()
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX
   const clientY = e.touches ? e.touches[0].clientY : e.clientY
-  const ratio = 1 - (clientY - rect.top) / rect.height
-  return Math.max(0, Math.min(1, ratio))
+
+  if (props.isLandscape) {
+    // Landscape: drag horizontal
+    const ratio = (clientX - rect.left) / rect.width
+    return Math.max(0, Math.min(1, ratio))
+  } else {
+    // Portrait: drag vertikal (dari atas ke bawah = kecil ke besar)
+    const ratio = 1 - (clientY - rect.top) / rect.height
+    return Math.max(0, Math.min(1, ratio))
+  }
 }
 
 function onTrackClick(e) {
@@ -66,7 +92,13 @@ function onTrackClick(e) {
 function startDrag(e) {
   dragging = true
   const move = (ev) => { if (dragging) emit('update:volume', getVolFromEvent(ev)) }
-  const up = () => { dragging = false; window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); window.removeEventListener('touchmove', move); window.removeEventListener('touchend', up) }
+  const up = () => {
+    dragging = false
+    window.removeEventListener('mousemove', move)
+    window.removeEventListener('mouseup', up)
+    window.removeEventListener('touchmove', move)
+    window.removeEventListener('touchend', up)
+  }
   window.addEventListener('mousemove', move)
   window.addEventListener('mouseup', up)
   window.addEventListener('touchmove', move, { passive: false })
@@ -75,6 +107,7 @@ function startDrag(e) {
 </script>
 
 <style scoped>
+/* ── PORTRAIT (default) ── */
 .volume-panel {
   display: flex;
   flex-direction: column;
@@ -85,6 +118,7 @@ function startDrag(e) {
   border-right: 1px solid var(--border);
   width: 72px;
   height: 100%;
+  flex-shrink: 0;
 }
 
 .mute-btn {
@@ -97,6 +131,7 @@ function startDrag(e) {
   align-items: center;
   justify-content: center;
   color: var(--text);
+  flex-shrink: 0;
 }
 .mute-btn.muted { background: var(--surface3); opacity: 0.5; }
 .mute-btn:hover { background: var(--surface3); }
@@ -108,6 +143,7 @@ function startDrag(e) {
   align-items: center;
   gap: 6px;
   width: 100%;
+  min-height: 0;
 }
 
 .vol-label {
@@ -115,6 +151,7 @@ function startDrag(e) {
   color: var(--accent);
   font-weight: 700;
   letter-spacing: 0.5px;
+  flex-shrink: 0;
 }
 
 .slider-track-wrap {
@@ -124,8 +161,10 @@ function startDrag(e) {
   justify-content: center;
   cursor: pointer;
   padding: 8px 0;
+  min-height: 0;
 }
 
+/* Portrait: slider vertikal */
 .slider-track {
   position: relative;
   width: 20px;
@@ -142,7 +181,7 @@ function startDrag(e) {
   right: 0;
   background: linear-gradient(to top, var(--accent2), var(--accent));
   border-radius: 10px;
-  transition: height 0.05s;
+  transition: height 0.05s, width 0.05s;
 }
 
 .slider-thumb {
@@ -156,16 +195,17 @@ function startDrag(e) {
   box-shadow: 0 2px 8px rgba(0,0,0,0.5);
   border: 3px solid var(--accent);
   cursor: grab;
-  transition: bottom 0.05s;
+  transition: bottom 0.05s, left 0.05s;
   z-index: 2;
 }
-.slider-thumb:active { cursor: grabbing; transform: translate(-50%, 50%) scale(1.15); }
+.slider-thumb:active { cursor: grabbing; }
 
 .fade-btns {
   display: flex;
   flex-direction: column;
   gap: 8px;
   width: 100%;
+  flex-shrink: 0;
 }
 
 .fade-btn {
@@ -185,4 +225,57 @@ function startDrag(e) {
 .fade-in-btn:hover { background: rgba(64,192,112,0.25); }
 .fade-out-btn { background: rgba(232,64,64,0.15); color: var(--danger); }
 .fade-out-btn:hover { background: rgba(232,64,64,0.25); }
+
+/* ── LANDSCAPE ── */
+.volume-panel.landscape {
+  flex-direction: row;
+  width: 100%;
+  height: 68px;
+  padding: 0 14px;
+  gap: 12px;
+  border-right: none;
+  border-top: 1px solid var(--border);
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.volume-panel.landscape .slider-wrap {
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.volume-panel.landscape .slider-track-wrap {
+  flex: 1;
+  width: 100%;
+  height: auto;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* Landscape: slider horizontal */
+.volume-panel.landscape .slider-track {
+  width: 100%;
+  height: 20px;
+}
+
+.volume-panel.landscape .slider-fill {
+  background: linear-gradient(to right, var(--accent2), var(--accent));
+}
+
+.volume-panel.landscape .fade-btns {
+  flex-direction: row;
+  gap: 6px;
+  width: auto;
+}
+
+.volume-panel.landscape .fade-btn {
+  flex-direction: row;
+  padding: 6px 10px;
+  gap: 4px;
+  width: auto;
+}
 </style>

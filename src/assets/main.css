@@ -52,3 +52,100 @@ input[type="range"] {
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ════════════════════════════════════════════════
+   TABLET LANDSCAPE MODE
+   Berlaku saat lebar ≥ 768px DAN landscape
+   ════════════════════════════════════════════════ */
+@media (min-width: 768px) and (orientation: landscape) {
+
+  /* App: kolom kiri (player+volume) | kolom kanan (playlist) */
+  .app .main-layout {
+    display: grid !important;
+    grid-template-columns: 400px 1fr;
+    grid-template-rows: 1fr;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* Kolom kiri: VolumeSlider + right-content (header + controls) */
+  /* VolumeSlider di-wrap dalam left-panel di App.vue */
+  .tablet-left {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  /* Volume panel jadi horizontal strip di bawah controls */
+  .volume-panel {
+    flex-direction: row !important;
+    width: 100% !important;
+    height: 68px !important;
+    padding: 0 14px !important;
+    gap: 12px !important;
+    border-right: none !important;
+    border-top: 1px solid var(--border) !important;
+    align-items: center;
+  }
+
+  .volume-panel .slider-wrap {
+    flex: 1;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .volume-panel .slider-track-wrap {
+    flex: 1;
+    width: 100% !important;
+    height: auto !important;
+    padding: 8px 0 !important;
+    display: flex;
+    align-items: center;
+  }
+
+  .volume-panel .slider-track {
+    width: 100% !important;
+    height: 20px !important;
+  }
+
+  /* Fill: arah kiri-kanan, width diset via inline style di VolumeSlider */
+  .volume-panel .slider-fill {
+    height: 100% !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    background: linear-gradient(to right, var(--accent2), var(--accent)) !important;
+  }
+
+  .volume-panel .fade-btns {
+    flex-direction: row !important;
+    gap: 6px;
+  }
+
+  .volume-panel .fade-btn {
+    flex-direction: row !important;
+    padding: 6px 10px !important;
+    gap: 4px;
+    width: auto !important;
+  }
+
+  /* Track name lebih besar */
+  .track-name-scroll span {
+    font-size: 20px !important;
+  }
+
+  /* Tombol play lebih besar */
+  .play-btn {
+    width: 80px !important;
+    height: 80px !important;
+  }
+
+  /* Playlist panel: full height di kolom kanan, hapus border-top */
+  .playlist-panel {
+    border-top: none !important;
+    height: 100%;
+    border-left: none;
+  }
+}
