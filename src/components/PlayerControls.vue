@@ -30,17 +30,17 @@
         </svg>
       </button>
 
-      <button class="ctrl-btn play-btn" @click="$emit('toggle-play')" :disabled="!hasTrack" aria-label="Play/Pause">
-        <svg v-if="!isPlaying" width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M8 5v14l11-7z"/>
-        </svg>
-        <svg v-else width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-        </svg>
-        <div class="play-indicator" v-if="isPlaying">
-          <span class="status-badge">PLAY</span>
-        </div>
-      </button>
+      <div class="play-wrap">
+        <button class="ctrl-btn play-btn" @click="$emit('toggle-play')" :disabled="!hasTrack" aria-label="Play/Pause">
+          <svg v-if="!isPlaying" width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+          <svg v-else width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+          </svg>
+        </button>
+        <div class="play-status-dot" :class="{ playing: isPlaying, paused: hasTrack && !isPlaying }"></div>
+      </div>
 
       <button class="ctrl-btn" @click="$emit('next')" :disabled="!hasTrack" aria-label="Berikutnya">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
@@ -89,9 +89,7 @@
           <span class="fade-unit">s</span>
         </div>
         <span class="fade-val" v-else>{{ fadeInDuration }}s</span>
-        <div class="fade-indicator fade-in-indicator" v-if="isFadingIn">
-          <span class="pulse">Fading IN</span>
-        </div>
+        <div class="fade-dot fade-in-dot" :class="{ active: isFadingIn }"></div>
       </div>
       <div class="fade-settings">
         <span class="fade-label">OUT</span>
@@ -108,9 +106,7 @@
           <span class="fade-unit">s</span>
         </div>
         <span class="fade-val" v-else>{{ fadeOutDuration }}s</span>
-        <div class="fade-indicator fade-out-indicator" v-if="isFadingOut">
-          <span class="pulse">Fading OUT</span>
-        </div>
+        <div class="fade-dot fade-out-dot" :class="{ active: isFadingOut }"></div>
       </div>
     </div>
   </div>
@@ -300,29 +296,28 @@ function onSeekTouch(e) {
   box-shadow: 0 0 0 12px var(--accent-soft), 0 4px 32px rgba(240,180,41,0.5);
 }
 
-.play-indicator {
-  position: absolute;
-  top: -25px;
-  left: 50%;
-  transform: translateX(-50%);
-  pointer-events: none;
+.play-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }
 
-.status-badge {
-  display: inline-block;
+.play-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border2);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.play-status-dot.playing {
+  background: var(--success);
+  box-shadow: 0 0 0 3px rgba(56,193,114,0.25);
+  animation: dot-pulse 0.8s ease-in-out infinite;
+}
+.play-status-dot.paused {
   background: var(--accent);
-  color: #000;
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 1.5px;
-  padding: 3px 8px;
-  border-radius: 3px;
-  animation: badge-pulse 0.6s ease-in-out infinite;
-}
-
-@keyframes badge-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(0.95); }
+  box-shadow: 0 0 0 3px rgba(240,180,41,0.2);
 }
 
 /* Bottom row */
@@ -423,44 +418,31 @@ function onSeekTouch(e) {
   outline: none;
 }
 
-.fade-indicator {
-  position: absolute;
-  top: -28px;
-  left: 50%;
-  transform: translateX(-50%);
-  pointer-events: none;
-  white-space: nowrap;
-  z-index: 10;
-}
-
-.fade-in-indicator .pulse {
-  background: var(--success);
-  color: #fff;
-}
-
-.fade-out-indicator .pulse {
-  background: var(--danger);
-  color: #fff;
-}
-
-.pulse {
-  display: inline-block;
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: 1px;
-  padding: 2px 6px;
-  border-radius: 2px;
-  animation: fade-pulse 0.5s ease-in-out infinite;
-}
-
-@keyframes fade-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
 .fade-unit { font-size: 11px; color: var(--text2); }
 
-/* ── LANDSCAPE: kompak ── */
+/* Titik indikator fade */
+.fade-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border2);
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.fade-in-dot.active {
+  background: var(--success);
+  box-shadow: 0 0 0 3px rgba(56,193,114,0.25);
+  animation: dot-pulse 0.8s ease-in-out infinite;
+}
+.fade-out-dot.active {
+  background: var(--danger);
+  box-shadow: 0 0 0 3px rgba(232,85,85,0.25);
+  animation: dot-pulse 0.8s ease-in-out infinite;
+}
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.75); }
+}
 @media (orientation: landscape) and (max-height: 500px) {
   .player-controls {
     gap: 6px;

@@ -339,10 +339,12 @@ const orientationLockType = ref('portrait') // 'portrait' | 'landscape'
 
 async function lockOrientation(type) {
   try {
-    await screen.orientation.lock(type)
+    const lockType = type === 'portrait' ? 'portrait-primary' : 'landscape-primary'
+    await screen.orientation.lock(lockType)
     orientationLocked.value = true
     orientationLockType.value = type
   } catch (e) {
+    console.warn('Orientation lock failed:', e)
     orientationLocked.value = false
   }
 }
