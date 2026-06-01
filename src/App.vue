@@ -1,5 +1,5 @@
 <template>
-  <div class="app" :class="{ 'is-landscape': isLandscape, 'rotate-90': deviceRotation === 90, 'rotate-180': deviceRotation === 180, 'rotate-270': deviceRotation === 270 }"
+  <div class="app" :class="{ 'is-landscape': isLandscape }"
     @keydown.space.prevent="player.togglePlay()" tabindex="0" ref="appRef">
 
     <!-- Hidden file inputs -->
@@ -650,27 +650,6 @@ async function installPWA() {
   outline: none;
   background: var(--bg);
   overflow: hidden;
-  transition: transform 0.3s ease-out;
-  transform-origin: center;
-}
-
-/* Rotasi mengikuti device saat auto-rotate mati */
-.app.rotate-90 {
-  transform: rotate(90deg);
-  width: 100vh;
-  height: 100vw;
-  top: calc((100vh - 100vw) / 2);
-  left: calc((100vw - 100vh) / 2);
-}
-.app.rotate-180 {
-  transform: rotate(180deg);
-}
-.app.rotate-270 {
-  transform: rotate(270deg);
-  width: 100vh;
-  height: 100vw;
-  top: calc((100vh - 100vw) / 2);
-  left: calc((100vw - 100vh) / 2);
 }
 
 /* Install banner */
@@ -835,7 +814,7 @@ async function installPWA() {
 .landscape-layout {
   flex: 1;
   display: grid;
-  grid-template-columns: minmax(0, 340px) 1fr;
+  grid-template-columns: minmax(0, 42%) 1fr;
   overflow: hidden;
   min-height: 0;
 }
@@ -843,17 +822,24 @@ async function installPWA() {
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--border);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   min-width: 0;
 }
 .landscape-left .app-header {
-  padding: 8px 12px;
+  padding: 6px 10px;
 }
 .landscape-left .app-logo {
-  font-size: 13px;
+  font-size: 12px;
+}
+.landscape-left .logo-icon {
+  font-size: 14px;
 }
 .landscape-left .hdr-icon-btn {
-  width: 30px; height: 30px;
+  width: 28px; height: 28px;
+}
+.landscape-left .hdr-icon-btn svg {
+  width: 14px; height: 14px;
 }
 
 /* Modals */

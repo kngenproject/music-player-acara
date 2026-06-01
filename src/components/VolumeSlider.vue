@@ -47,8 +47,26 @@
       </button>
     </div>
 
-  </div>
-</template>
+    <!-- Baris 3: Normalisasi & Pre-Amp -->
+    <div class="audio-enhancements">
+      <button class="enhance-btn" :class="{ active: normalizationEnabled }" 
+        @click="$emit('toggle-normalization')" title="Normalisasi Volume" aria-label="Normalisasi">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M3 9v6h4l5 5V4L7 9H3zm13.5-3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+        </svg>
+        <span>NORM</span>
+      </button>
+      
+      <div class="preamp-control">
+        <span class="preamp-label">Pre-Amp</span>
+        <div class="preamp-slider-wrap">
+          <input type="range" min="-6" max="12" step="1" :value="preAmp" 
+            @input="$emit('update:preAmp', parseInt($event.target.value))"
+            class="preamp-slider" />
+        </div>
+        <span class="preamp-value">{{ preAmp > 0 ? '+' : '' }}{{ preAmp }}dB</span>
+      </div>
+    </div>
 
 <script setup>
 import { ref, computed } from 'vue'
@@ -57,9 +75,11 @@ const props = defineProps({
   volume: Number,
   isMuted: Boolean,
   isLandscape: { type: Boolean, default: false },
-  isInline: { type: Boolean, default: false }
+  isInline: { type: Boolean, default: false },
+  preAmp: { type: Number, default: 0 },
+  normalizationEnabled: { type: Boolean, default: false }
 })
-const emit = defineEmits(['update:volume','toggle-mute','fade-in','fade-out'])
+const emit = defineEmits(['update:volume','toggle-mute','fade-in','fade-out','update:preAmp','toggle-normalization'])
 
 const trackRef = ref(null)
 let dragging = false
@@ -220,6 +240,108 @@ function startDrag(e) {
 }
 .fade-out-btn:hover { background: rgba(232,85,85,0.18); }
 
+/* ══ Audio Enhancements ══ */
+.audio-enhancements {
+  display: flex;
+  gap: 8px;
+  padding: 6px 14px;
+  border-top: 1px solid var(--border);
+  align-items: center;
+}
+
+.enhance-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: var(--surface2);
+  color: var(--text3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.enhance-btn:hover {
+  background: var(--surface3);
+  color: var(--text2);
+}
+.enhance-btn.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: rgba(240,180,41,0.3);
+}
+
+.preamp-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.preamp-label {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--text3);
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+.preamp-slider-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 60px;
+}
+
+.preamp-slider {
+  width: 100%;
+  height: 5px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #e85555 0%, #888 50%, #38c172 100%);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.preamp-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+}
+
+.preamp-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+}
+
+.preamp-value {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 32px;
+  text-align: right;
+  white-space: nowrap;
+}
+
 /* ══ LANDSCAPE & INLINE: tetap dua baris, padding lebih kecil ══ */
 .volume-panel.landscape,
 .volume-panel.inline {
@@ -227,14 +349,50 @@ function startDrag(e) {
 }
 .volume-panel.landscape .volume-row,
 .volume-panel.inline .volume-row {
-  padding: 8px 14px;
+  padding: 6px 10px;
+}
+.volume-panel.landscape .mute-btn,
+.volume-panel.inline .mute-btn {
+  width: 30px; height: 30px;
+}
+.volume-panel.landscape .mute-btn svg,
+.volume-panel.inline .mute-btn svg {
+  width: 16px; height: 16px;
+}
+.volume-panel.landscape .slider-track,
+.volume-panel.inline .slider-track {
+  height: 12px;
+}
+.volume-panel.landscape .slider-thumb,
+.volume-panel.inline .slider-thumb {
+  width: 20px; height: 20px;
 }
 .volume-panel.landscape .fade-row,
 .volume-panel.inline .fade-row {
-  padding: 6px 14px;
+  padding: 4px 10px;
+  gap: 6px;
 }
 .volume-panel.landscape .fade-btn,
 .volume-panel.inline .fade-btn {
-  padding: 6px 10px;
+  padding: 5px 8px;
+  font-size: 10px;
+}
+.volume-panel.landscape .audio-enhancements,
+.volume-panel.inline .audio-enhancements {
+  padding: 4px 10px;
+}
+.volume-panel.landscape .enhance-btn,
+.volume-panel.inline .enhance-btn {
+  padding: 4px 8px;
+  font-size: 9px;
+}
+.volume-panel.landscape .preamp-label,
+.volume-panel.inline .preamp-label {
+  font-size: 8px;
+}
+.volume-panel.landscape .preamp-value,
+.volume-panel.inline .preamp-value {
+  font-size: 9px;
+  min-width: 28px;
 }
 </style>

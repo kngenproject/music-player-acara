@@ -37,6 +37,9 @@
         <svg v-else width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
           <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
         </svg>
+        <div class="play-indicator" v-if="isPlaying">
+          <span class="status-badge">PLAY</span>
+        </div>
       </button>
 
       <button class="ctrl-btn" @click="$emit('next')" :disabled="!hasTrack" aria-label="Berikutnya">
@@ -86,6 +89,9 @@
           <span class="fade-unit">s</span>
         </div>
         <span class="fade-val" v-else>{{ fadeInDuration }}s</span>
+        <div class="fade-indicator fade-in-indicator" v-if="isFadingIn">
+          <span class="pulse">Fading IN</span>
+        </div>
       </div>
       <div class="fade-settings">
         <span class="fade-label">OUT</span>
@@ -102,6 +108,9 @@
           <span class="fade-unit">s</span>
         </div>
         <span class="fade-val" v-else>{{ fadeOutDuration }}s</span>
+        <div class="fade-indicator fade-out-indicator" v-if="isFadingOut">
+          <span class="pulse">Fading OUT</span>
+        </div>
       </div>
     </div>
   </div>
@@ -125,6 +134,8 @@ const props = defineProps({
   fadeOutPreset: String,
   fadeInDuration: Number,
   fadeOutDuration: Number,
+  isFadingIn: Boolean,
+  isFadingOut: Boolean,
   formatTime: Function
 })
 
@@ -283,9 +294,35 @@ function onSeekTouch(e) {
   width: 68px !important; height: 68px !important;
   border: none !important;
   box-shadow: 0 0 0 8px var(--accent-soft), 0 4px 24px rgba(240,180,41,0.35);
+  position: relative;
 }
 .play-btn:hover:not(:disabled) {
   box-shadow: 0 0 0 12px var(--accent-soft), 0 4px 32px rgba(240,180,41,0.5);
+}
+
+.play-indicator {
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.status-badge {
+  display: inline-block;
+  background: var(--accent);
+  color: #000;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  animation: badge-pulse 0.6s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.95); }
 }
 
 /* Bottom row */
@@ -386,27 +423,73 @@ function onSeekTouch(e) {
   outline: none;
 }
 
+.fade-indicator {
+  position: absolute;
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.fade-in-indicator .pulse {
+  background: var(--success);
+  color: #fff;
+}
+
+.fade-out-indicator .pulse {
+  background: var(--danger);
+  color: #fff;
+}
+
+.pulse {
+  display: inline-block;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  animation: fade-pulse 0.5s ease-in-out infinite;
+}
+
+@keyframes fade-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 .fade-unit { font-size: 11px; color: var(--text2); }
 
 /* ── LANDSCAPE: kompak ── */
 @media (orientation: landscape) and (max-height: 500px) {
   .player-controls {
-    gap: 8px;
-    padding: 10px 16px 10px;
+    gap: 6px;
+    padding: 6px 12px;
   }
 
-  .track-info { min-height: 22px; }
-  .track-name-scroll span { font-size: 15px; }
+  .track-info { min-height: 18px; }
+  .track-name-scroll span { font-size: 13px; }
 
-  .seek-bar { padding: 6px 0; }
+  .seek-wrap { gap: 6px; }
+  .time { font-size: 10px; min-width: 28px; }
+  .seek-bar { padding: 4px 0; }
+  .seek-thumb { width: 14px; height: 14px; }
 
-  .main-controls { gap: 12px; }
-  .ctrl-btn { width: 44px; height: 44px; }
-  .play-btn { width: 58px !important; height: 58px !important; }
+  .main-controls { gap: 10px; }
+  .ctrl-btn { width: 38px; height: 38px; }
+  .ctrl-btn svg { width: 20px; height: 20px; }
+  .play-btn { width: 50px !important; height: 50px !important; }
+  .play-btn svg { width: 28px !important; height: 28px !important; }
+  .play-indicator { top: -20px; }
+  .status-badge { font-size: 8px; padding: 2px 6px; }
 
-  .bottom-row { flex-direction: row; align-items: center; gap: 10px; }
-  .mode-controls { gap: 4px; }
-  .mode-btn { width: 38px; height: 32px; }
-  .fade-settings { flex: 1; padding: 5px 10px; }
+  .bottom-row { flex-direction: row; align-items: center; gap: 6px; }
+  .mode-controls { gap: 3px; }
+  .mode-btn { width: 32px; height: 28px; }
+  .mode-btn svg { width: 14px; height: 14px; }
+  .fade-settings { flex: 1; padding: 4px 8px; gap: 5px; }
+  .fade-label { font-size: 8px; }
+  .preset-btn { padding: 3px 5px; font-size: 10px; }
+  .fade-val { font-size: 10px; min-width: 20px; }
 }
 </style>
