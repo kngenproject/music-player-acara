@@ -1,6 +1,6 @@
 <template>
   <div class="app" :class="{ 'is-landscape': isLandscape }" 
-    :style="{ transform: `rotate(${deviceRotation}deg)` }"
+    :style="{ transform: `rotate(${deviceRotation ?? 0}deg)`, transition: 'transform 0.3s ease-out' }"
     @keydown.space.prevent="player.togglePlay()" tabindex="0" ref="appRef">
 
     <!-- Hidden file inputs -->
@@ -559,38 +559,21 @@ function checkOrientation() {
 }
 
 function handleDeviceOrientation(event) {
-  if (!event) {
-    // Fallback ke screen.orientation API
-    if (typeof window.screen !== 'undefined' && window.screen.orientation) {
-      const type = window.screen.orientation.type
-      const rotationMap = {
-        'portrait-primary': 0,
-        'landscape-primary': 90,
-        'portrait-secondary': 180,
-        'landscape-secondary': 270
-      }
-      deviceRotation.value = rotationMap[type] || 0
-    } else if (window.orientation !== undefined) {
-      deviceRotation.value = window.orientation || 0
-    }
-    return
-  }
-
-  const alpha = event.alpha || 0
-  const beta = event.beta || 0
-  const gamma = event.gamma || 0
-  
-  if (typeof window.screen !== 'undefined' && window.screen.orientation) {
-    const type = window.screen.orientation.type
+  try {
     const rotationMap = {
       'portrait-primary': 0,
       'landscape-primary': 90,
       'portrait-secondary': 180,
       'landscape-secondary': 270
     }
-    deviceRotation.value = rotationMap[type] || 0
-  } else if (window.orientation !== undefined) {
-    deviceRotation.value = window.orientation || 0
+    if (typeof window.screen !== 'undefined' && window.screen.orientation) {
+      const type = window.screen.orientation.type
+      deviceRotation.value = rotationMap[type] ?? 0
+    } else if (window.orientation !== undefined) {
+      deviceRotation.value = window.orientation ?? 0
+    }
+  } catch (e) {
+    deviceRotation.value = 0
   }
 }
 
