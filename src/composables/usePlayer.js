@@ -131,6 +131,7 @@ export function usePlayer() {
   }
 
   function onTimeUpdate() {
+    if (isFadingOut.value) return  // lagu sedang fade out, hentikan update timer
     currentTime.value = audioEl?.currentTime || 0
     if (crossfadeEnabled.value && audioEl && duration.value > 0) {
       const timeLeft = duration.value - audioEl.currentTime
@@ -181,15 +182,19 @@ export function usePlayer() {
     const startVol = audioEl.volume
     const diff = targetVol - startVol
     let step = 0
-    fadeTimer = setInterval(() => {
+    const id = setInterval(() => {
+      // If this interval was cancelled (new fade started), stop silently
+      if (fadeTimer !== id) { clearInterval(id); return }
       step++
       audioEl.volume = Math.max(0, Math.min(1, startVol + diff * (step / steps)))
       if (step >= steps) {
-        clearInterval(fadeTimer); fadeTimer = null
+        clearInterval(id)
+        fadeTimer = null
         audioEl.volume = targetVol
         onDone?.()
       }
     }, interval)
+    fadeTimer = id
   }
 
   async function loadTrack(index, autoPlay = true) {
@@ -278,9 +283,12 @@ export function usePlayer() {
   }
 
   function manualFadeOut() {
+    if (!audioEl || !isPlaying.value) return
     cancelFade()
     isFadingOut.value = true
-    fadeVolumeTo(0, fadeOutDuration.value, () => {
+    const fadeDur = fadeOutDuration.value
+    fadeVolumeTo(0, fadeDur, () => {
+      audioEl?.pause()
       isPlaying.value = false
       isFadingOut.value = false
     })
