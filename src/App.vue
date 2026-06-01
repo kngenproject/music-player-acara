@@ -1,5 +1,6 @@
 <template>
-  <div class="app" :class="{ 'is-landscape': isLandscape }"
+  <div class="app" :class="{ 'is-landscape': isLandscape }" 
+    :style="{ transform: `rotate(${deviceRotation}deg)` }"
     @keydown.space.prevent="player.togglePlay()" tabindex="0" ref="appRef">
 
     <!-- Hidden file inputs -->
@@ -281,6 +282,7 @@ const folderInput = ref(null)
 const showInstallBanner = ref(false)
 const isPWA = ref(false)
 const isLandscape = ref(false)
+const deviceRotation = ref(0)
 let deferredPrompt = null
 
 // ── Wake Lock ──────────────────────────────────────────
@@ -550,6 +552,38 @@ function checkOrientation() {
   isLandscape.value = window.innerHeight < window.innerWidth
 }
 
+function handleDeviceOrientation(event) {
+  const alpha = event.alpha || 0
+  const beta = event.beta || 0
+  const gamma = event.gamma || 0
+  
+  // Hitung rotasi berdasarkan orientasi device
+  let rotation = 0
+  
+  if (typeof window.screen !== 'undefined' && window.screen.orientation) {
+    switch (window.screen.orientation.type) {
+      case 'portrait-primary':
+        rotation = 0
+        break
+      case 'landscape-primary':
+        rotation = 90
+        break
+      case 'portrait-secondary':
+        rotation = 180
+        break
+      case 'landscape-secondary':
+        rotation = 270
+        break
+      default:
+        rotation = 0
+    }
+  } else if (window.orientation !== undefined) {
+    rotation = window.orientation || 0
+  }
+  
+  deviceRotation.value = rotation
+}
+
 function onKeydown(e) {
   if (e.target === saveInputRef.value || e.target === renameInputRef.value) return
   switch (e.code || String.fromCharCode(e.keyCode)) {
@@ -568,7 +602,12 @@ function onKeydown(e) {
 onMounted(() => {
   window.addEventListener('keydown', onKeydown)
   window.addEventListener('resize', checkOrientation)
+  window.addEventListener('orientationchange', handleDeviceOrientation)
+  if ('ondeviceorientation' in window) {
+    window.addEventListener('deviceorientation', handleDeviceOrientation)
+  }
   checkOrientation()
+  handleDeviceOrientation()
   if (window.matchMedia('(display-mode: standalone)').matches) isPWA.value = true
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault(); deferredPrompt = e; showInstallBanner.value = true
@@ -579,6 +618,8 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeydown)
   window.removeEventListener('resize', checkOrientation)
+  window.removeEventListener('orientationchange', handleDeviceOrientation)
+  window.removeEventListener('deviceorientation', handleDeviceOrientation)
   releaseWakeLock()
 })
 
@@ -600,6 +641,8 @@ async function installPWA() {
   outline: none;
   background: var(--bg);
   overflow: hidden;
+  transition: transform 0.3s ease-out;
+  transform-origin: center;
 }
 
 /* Install banner */
