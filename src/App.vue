@@ -1,6 +1,5 @@
 <template>
-  <div class="app" :class="{ 'is-landscape': isLandscape }" 
-    :style="{ transform: `rotate(${deviceRotation ?? 0}deg)`, transition: 'transform 0.3s ease-out' }"
+  <div class="app" :class="{ 'is-landscape': isLandscape, 'rotate-90': deviceRotation === 90, 'rotate-180': deviceRotation === 180, 'rotate-270': deviceRotation === 270 }"
     @keydown.space.prevent="player.togglePlay()" tabindex="0" ref="appRef">
 
     <!-- Hidden file inputs -->
@@ -566,9 +565,24 @@ function handleDeviceOrientation(event) {
       'portrait-secondary': 180,
       'landscape-secondary': 270
     }
+
+    // Gunakan screen.orientation untuk deteksi orientasi saat ini
     if (typeof window.screen !== 'undefined' && window.screen.orientation) {
       const type = window.screen.orientation.type
-      deviceRotation.value = rotationMap[type] ?? 0
+      const screenAngle = rotationMap[type] ?? 0
+
+      // Cek apakah layar sudah landscape secara natural (window lebih lebar dari tinggi)
+      const naturallyLandscape = window.innerWidth > window.innerHeight
+
+      // Jika screen orientation sudah sesuai (auto rotate aktif), tidak perlu rotate manual
+      if ((screenAngle === 90 || screenAngle === 270) && naturallyLandscape) {
+        deviceRotation.value = 0
+      } else if ((screenAngle === 0 || screenAngle === 180) && !naturallyLandscape) {
+        deviceRotation.value = 0
+      } else {
+        // Auto rotate off, rotate manual mengikuti screen orientation
+        deviceRotation.value = screenAngle
+      }
     } else if (window.orientation !== undefined) {
       deviceRotation.value = window.orientation ?? 0
     }
@@ -627,8 +641,10 @@ async function installPWA() {
 
 <style scoped>
 .app {
-  height: 100%;
-  height: 100dvh;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   outline: none;
@@ -636,6 +652,25 @@ async function installPWA() {
   overflow: hidden;
   transition: transform 0.3s ease-out;
   transform-origin: center;
+}
+
+/* Rotasi mengikuti device saat auto-rotate mati */
+.app.rotate-90 {
+  transform: rotate(90deg);
+  width: 100vh;
+  height: 100vw;
+  top: calc((100vh - 100vw) / 2);
+  left: calc((100vw - 100vh) / 2);
+}
+.app.rotate-180 {
+  transform: rotate(180deg);
+}
+.app.rotate-270 {
+  transform: rotate(270deg);
+  width: 100vh;
+  height: 100vw;
+  top: calc((100vh - 100vw) / 2);
+  left: calc((100vw - 100vh) / 2);
 }
 
 /* Install banner */
@@ -800,14 +835,25 @@ async function installPWA() {
 .landscape-layout {
   flex: 1;
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: minmax(0, 340px) 1fr;
   overflow: hidden;
+  min-height: 0;
 }
 .landscape-left {
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--border);
   overflow: hidden;
+  min-width: 0;
+}
+.landscape-left .app-header {
+  padding: 8px 12px;
+}
+.landscape-left .app-logo {
+  font-size: 13px;
+}
+.landscape-left .hdr-icon-btn {
+  width: 30px; height: 30px;
 }
 
 /* Modals */
@@ -1021,6 +1067,7 @@ async function installPWA() {
   flex-direction: column;
   flex: 1;
   overflow: hidden;
+  min-width: 0;
 }
 
 /* Settings button active indicator */
