@@ -194,10 +194,14 @@
             <VolumeSlider
               :volume="player.volume.value"
               :isMuted="player.isMuted.value"
+              :preAmp="player.preAmp.value"
+              :normalizationEnabled="player.normalizationEnabled.value"
               :isLandscape="false"
               :isInline="true"
               @update:volume="player.setVolume"
               @toggle-mute="player.toggleMute"
+              @update:preAmp="player.setPreAmp"
+              @toggle-normalization="player.toggleNormalization"
               @fade-in="player.manualFadeIn"
               @fade-out="player.manualFadeOut"
             />
@@ -468,6 +472,8 @@ const playerControlsProps = computed(() => ({
   fadeOutPreset: player.fadeOutPreset.value,
   fadeInDuration: player.fadeInDuration.value,
   fadeOutDuration: player.fadeOutDuration.value,
+  isFadingIn: player.isFadingIn.value,
+  isFadingOut: player.isFadingOut.value,
   formatTime: player.formatTime
 }))
 
@@ -553,35 +559,39 @@ function checkOrientation() {
 }
 
 function handleDeviceOrientation(event) {
+  if (!event) {
+    // Fallback ke screen.orientation API
+    if (typeof window.screen !== 'undefined' && window.screen.orientation) {
+      const type = window.screen.orientation.type
+      const rotationMap = {
+        'portrait-primary': 0,
+        'landscape-primary': 90,
+        'portrait-secondary': 180,
+        'landscape-secondary': 270
+      }
+      deviceRotation.value = rotationMap[type] || 0
+    } else if (window.orientation !== undefined) {
+      deviceRotation.value = window.orientation || 0
+    }
+    return
+  }
+
   const alpha = event.alpha || 0
   const beta = event.beta || 0
   const gamma = event.gamma || 0
   
-  // Hitung rotasi berdasarkan orientasi device
-  let rotation = 0
-  
   if (typeof window.screen !== 'undefined' && window.screen.orientation) {
-    switch (window.screen.orientation.type) {
-      case 'portrait-primary':
-        rotation = 0
-        break
-      case 'landscape-primary':
-        rotation = 90
-        break
-      case 'portrait-secondary':
-        rotation = 180
-        break
-      case 'landscape-secondary':
-        rotation = 270
-        break
-      default:
-        rotation = 0
+    const type = window.screen.orientation.type
+    const rotationMap = {
+      'portrait-primary': 0,
+      'landscape-primary': 90,
+      'portrait-secondary': 180,
+      'landscape-secondary': 270
     }
+    deviceRotation.value = rotationMap[type] || 0
   } else if (window.orientation !== undefined) {
-    rotation = window.orientation || 0
+    deviceRotation.value = window.orientation || 0
   }
-  
-  deviceRotation.value = rotation
 }
 
 function onKeydown(e) {
