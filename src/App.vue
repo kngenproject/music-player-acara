@@ -123,6 +123,43 @@
 
           <div class="setting-divider"></div>
 
+          <!-- Orientation Lock -->
+          <div class="setting-item" v-if="orientationLockSupported">
+            <div class="setting-info">
+              <div class="setting-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0">
+                  <path d="M16.48 2.52c3.27 1.55 5.61 4.72 5.97 8.48h1.5C23.44 4.84 20.29 1.1 16.06.06L16.48 2.52zm-9 .01C3.71 3.55 1.37 6.72 1.01 10.5H-.5C-.06 4.86 3.1 1.11 7.32.07L7.48 2.53zM1.01 13.5c.36 3.77 2.7 6.95 5.97 8.48l.42-2.47C4.17 18.17 2.19 16.04 1.7 13.5H1.01zm14.5 6.01c3.27-1.55 5.61-4.72 5.97-8.48h1.5C22.44 17.16 19.28 20.9 15.06 21.94L15.5 19.51zM12 1C8.13 1 5 4.13 5 8s3.13 7 7 7 7-3.13 7-7-3.13-7-7-7zm0 12c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+                </svg>
+                Kunci Orientasi
+              </div>
+              <div class="setting-desc">Paksa tampilan portrait atau landscape</div>
+            </div>
+            <div class="orientation-btns">
+              <button
+                class="orient-btn"
+                :class="{ active: orientationLocked && orientationLockType === 'portrait' }"
+                @click="toggleOrientationLock('portrait')"
+                title="Kunci Portrait"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
+              </button>
+              <button
+                class="orient-btn"
+                :class="{ active: orientationLocked && orientationLockType === 'landscape' }"
+                @click="toggleOrientationLock('landscape')"
+                title="Kunci Landscape"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M1 6.99C1 5.9 1.9 5 3 5h18c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H3c-1.1 0-2-.9-2-2V7zm2 0v10h18V7H3z"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="setting-wake-status" v-if="!orientationLockSupported">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+            Browser ini tidak mendukung lock orientasi
+          </div>
+
+          <div class="setting-divider"></div>
+
           <!-- Update App -->
           <div class="setting-item">
             <div class="setting-info">
@@ -294,6 +331,36 @@ const wakeLockActive = ref(false)
 const wakeLockSupported = ref('wakeLock' in navigator)
 const isUpdating = ref(false)
 let wakeLockSentinel = null
+
+// ── Orientation Lock ───────────────────────────────────
+const orientationLocked = ref(false)
+const orientationLockSupported = ref(!!(screen.orientation && screen.orientation.lock))
+const orientationLockType = ref('portrait') // 'portrait' | 'landscape'
+
+async function lockOrientation(type) {
+  try {
+    await screen.orientation.lock(type)
+    orientationLocked.value = true
+    orientationLockType.value = type
+  } catch (e) {
+    orientationLocked.value = false
+  }
+}
+
+async function unlockOrientation() {
+  try {
+    screen.orientation.unlock()
+    orientationLocked.value = false
+  } catch (e) {}
+}
+
+async function toggleOrientationLock(type) {
+  if (orientationLocked.value && orientationLockType.value === type) {
+    await unlockOrientation()
+  } else {
+    await lockOrientation(type)
+  }
+}
 
 async function requestWakeLock() {
   try {
@@ -628,6 +695,7 @@ onUnmounted(() => {
   window.removeEventListener('orientationchange', handleDeviceOrientation)
   window.removeEventListener('deviceorientation', handleDeviceOrientation)
   releaseWakeLock()
+  if (orientationLocked.value) unlockOrientation()
 })
 
 async function installPWA() {
@@ -1179,6 +1247,36 @@ async function installPWA() {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
+}
+/* Orientation lock buttons */
+.orientation-btns {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.orient-btn {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface2);
+  color: var(--text3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.orient-btn:hover {
+  background: var(--surface3);
+  color: var(--text);
+}
+.orient-btn.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: rgba(240,180,41,0.4);
+  box-shadow: 0 0 0 2px rgba(240,180,41,0.15);
 }
 
 </style>
