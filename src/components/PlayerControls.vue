@@ -31,14 +31,18 @@
       </button>
 
       <div class="play-wrap">
-        <button class="ctrl-btn play-btn" @click="$emit('toggle-play')" :disabled="!hasTrack" aria-label="Play/Pause">
-          <svg v-if="!isPlaying" width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M8 5v14l11-7z"/>
-          </svg>
-          <svg v-else width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
-          </svg>
-        </button>
+        <div class="play-pause-pair">
+          <button class="ctrl-btn pause-btn" @click="$emit('pause')" :disabled="!hasTrack || !isPlaying" aria-label="Pause">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+            </svg>
+          </button>
+          <button class="ctrl-btn play-btn" @click="$emit('play')" :disabled="!hasTrack || isPlaying" aria-label="Play">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </button>
+        </div>
         <div class="play-status-dot" :class="{ playing: isPlaying, paused: hasTrack && !isPlaying }"></div>
       </div>
 
@@ -136,7 +140,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits([
-  'toggle-play','prev','next',
+  'play','pause','prev','next',
   'toggle-loop','toggle-loop-all','toggle-shuffle','toggle-crossfade',
   'seek','set-fade-in-preset','set-fade-in-duration','set-fade-out-preset','set-fade-out-duration'
 ])
@@ -284,16 +288,38 @@ function onSeekTouch(e) {
 .ctrl-btn:hover:not(:disabled) { background: var(--surface3); }
 .ctrl-btn:disabled { opacity: 0.25; cursor: not-allowed; }
 
+.play-pause-pair {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .play-btn {
   background: var(--accent) !important;
   color: #000 !important;
   width: 68px !important; height: 68px !important;
   border: none !important;
   box-shadow: 0 0 0 8px var(--accent-soft), 0 4px 24px rgba(240,180,41,0.35);
-  position: relative;
 }
 .play-btn:hover:not(:disabled) {
   box-shadow: 0 0 0 12px var(--accent-soft), 0 4px 32px rgba(240,180,41,0.5);
+}
+.play-btn:disabled {
+  opacity: 0.3 !important;
+  cursor: not-allowed;
+  box-shadow: none !important;
+}
+
+.pause-btn {
+  background: var(--surface2) !important;
+  color: var(--text) !important;
+  width: 52px !important; height: 52px !important;
+  border: 1px solid var(--border2) !important;
+}
+.pause-btn:hover:not(:disabled) { background: var(--surface3) !important; }
+.pause-btn:disabled {
+  opacity: 0.25 !important;
+  cursor: not-allowed;
 }
 
 .play-wrap {
@@ -461,9 +487,10 @@ function onSeekTouch(e) {
   .ctrl-btn { width: 38px; height: 38px; }
   .ctrl-btn svg { width: 20px; height: 20px; }
   .play-btn { width: 50px !important; height: 50px !important; }
-  .play-btn svg { width: 28px !important; height: 28px !important; }
-  .play-indicator { top: -20px; }
-  .status-badge { font-size: 8px; padding: 2px 6px; }
+  .play-btn svg { width: 26px !important; height: 26px !important; }
+  .pause-btn { width: 38px !important; height: 38px !important; }
+  .pause-btn svg { width: 20px !important; height: 20px !important; }
+  .play-pause-pair { gap: 6px; }
 
   .bottom-row { flex-direction: row; align-items: center; gap: 6px; }
   .mode-controls { gap: 3px; }

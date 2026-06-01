@@ -550,7 +550,8 @@ const playerControlsProps = computed(() => ({
 }))
 
 const playerControlsEmits = {
-  'toggle-play': player.togglePlay,
+  'play': player.play,
+  'pause': player.pause,
   'prev': player.playPrev,
   'next': player.playNext,
   'seek': player.seekTo,
