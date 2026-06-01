@@ -84,7 +84,7 @@ export function usePlayer() {
       
       // Pre-amplifier
       preAmpNode = audioCtx.createGain()
-      preAmpNode.gain.value = 1 + preAmp.value / 20
+      preAmpNode.gain.value = Math.pow(10, preAmp.value / 20)
       
       // Compressor untuk normalisasi
       compressorNode = audioCtx.createDynamicsCompressor()
@@ -135,7 +135,14 @@ export function usePlayer() {
     if (crossfadeEnabled.value && audioEl && duration.value > 0) {
       const timeLeft = duration.value - audioEl.currentTime
       if (timeLeft <= fadeOutDuration.value && timeLeft > 0 && isPlaying.value) {
-        if (!crossfadeTimer) { crossfadeTimer = true }
+        if (!crossfadeTimer) {
+          crossfadeTimer = true
+          // Fade out current track, then play next
+          fadeVolumeTo(0, timeLeft, () => {
+            crossfadeTimer = null
+            if (!isLooping.value) playNext()
+          })
+        }
       }
     }
   }
@@ -143,7 +150,7 @@ export function usePlayer() {
   function onLoaded() { duration.value = audioEl?.duration || 0 }
 
   function onEnded() {
-    crossfadeTimer = null
+    if (crossfadeTimer) { crossfadeTimer = null; return } // crossfade already handled next
     if (isLooping.value) { audioEl.currentTime = 0; audioEl.play() }
     else playNext()
   }
@@ -163,6 +170,7 @@ export function usePlayer() {
 
   function cancelFade() {
     if (fadeTimer) { clearInterval(fadeTimer); fadeTimer = null }
+    crossfadeTimer = null
   }
 
   function fadeVolumeTo(targetVol, durationSec, onDone) {
@@ -399,7 +407,7 @@ export function usePlayer() {
   function setPreAmp(value) {
     preAmp.value = value
     if (preAmpNode) {
-      preAmpNode.gain.value = 1 + value / 20
+      preAmpNode.gain.value = Math.pow(10, value / 20)
     }
   }
 
