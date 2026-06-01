@@ -64,10 +64,16 @@ export function usePlayer() {
   const fadeInPreset = ref('3')
   const fadeOutPreset = ref('3')
   const crossfadeEnabled = ref(true)
+  const preAmp = ref(0)
+  const normalizationEnabled = ref(false)
+  const isFadingIn = ref(false)
+  const isFadingOut = ref(false)
 
   let audioCtx = null
   let gainNode = null
   let analyserNode = null
+  let preAmpNode = null
+  let compressorNode = null
   let audioEl = null
   let fadeTimer = null
   let crossfadeTimer = null
@@ -75,14 +81,31 @@ export function usePlayer() {
   function getAudioCtx() {
     if (!audioCtx) {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+      
+      // Pre-amplifier
+      preAmpNode = audioCtx.createGain()
+      preAmpNode.gain.value = 1 + preAmp.value / 20
+      
+      // Compressor untuk normalisasi
+      compressorNode = audioCtx.createDynamicsCompressor()
+      compressorNode.threshold.value = -24
+      compressorNode.knee.value = 30
+      compressorNode.ratio.value = 4
+      compressorNode.attack.value = 0.003
+      compressorNode.release.value = 0.25
+      
       gainNode = audioCtx.createGain()
       analyserNode = audioCtx.createAnalyser()
       analyserNode.fftSize = 256
       analyserNode.smoothingTimeConstant = 0.8
+      
+      // Routing: preAmp -> compressor -> gainNode -> analyser -> output
+      preAmpNode.connect(compressorNode)
+      compressorNode.connect(gainNode)
       gainNode.connect(analyserNode)
       analyserNode.connect(audioCtx.destination)
     }
-    return { audioCtx, gainNode, analyserNode }
+    return { audioCtx, gainNode, analyserNode, preAmpNode, compressorNode }
   }
 
   function createAudio() {
@@ -100,9 +123,9 @@ export function usePlayer() {
     audioEl.addEventListener('ended', onEnded)
     audioEl.addEventListener('loadedmetadata', onLoaded)
     try {
-      const { audioCtx: ctx, gainNode: gain } = getAudioCtx()
+      const { audioCtx: ctx, preAmpNode: preAmp } = getAudioCtx()
       const source = ctx.createMediaElementSource(audioEl)
-      source.connect(gain)
+      source.connect(preAmp)
     } catch (e) {}
     return audioEl
   }
@@ -248,22 +271,29 @@ export function usePlayer() {
 
   function manualFadeOut() {
     cancelFade()
+    isFadingOut.value = true
     fadeVolumeTo(0, fadeOutDuration.value, () => {
       isPlaying.value = false
+      isFadingOut.value = false
     })
   }
 
   function manualFadeIn() {
     if (!audioEl) return
     cancelFade()
+    isFadingIn.value = true
     if (!isPlaying.value) {
       audioEl.volume = 0
       audioEl.play().then(() => {
         isPlaying.value = true
-        fadeVolumeTo(isMuted.value ? 0 : volume.value, fadeInDuration.value)
+        fadeVolumeTo(isMuted.value ? 0 : volume.value, fadeInDuration.value, () => {
+          isFadingIn.value = false
+        })
       })
     } else {
-      fadeVolumeTo(isMuted.value ? 0 : volume.value, fadeInDuration.value)
+      fadeVolumeTo(isMuted.value ? 0 : volume.value, fadeInDuration.value, () => {
+        isFadingIn.value = false
+      })
     }
   }
 
@@ -366,14 +396,28 @@ export function usePlayer() {
     if (val !== 'custom') fadeOutDuration.value = parseFloat(val)
   }
 
-  const currentTrack = computed(() =>
-    currentIndex.value >= 0 && activePlaylist.value ? activePlaylist.value[currentIndex.value] : null
-  )
+  function setPreAmp(value) {
+    preAmp.value = value
+    if (preAmpNode) {
+      preAmpNode.gain.value = 1 + value / 20
+    }
+  }
+
+  function toggleNormalization() {
+    normalizationEnabled.value = !normalizationEnabled.value
+    if (compressorNode) {
+      compressorNode.ratio.value = normalizationEnabled.value ? 4 : 1
+    }
+  }
 
   const activePlaylist = computed(() => {
     if (!activePlaylistId.value || !playlists.value[activePlaylistId.value]) return []
     return playlists.value[activePlaylistId.value].tracks || []
   })
+
+  const currentTrack = computed(() =>
+    currentIndex.value >= 0 && activePlaylist.value ? activePlaylist.value[currentIndex.value] : null
+  )
 
   const progressPercent = computed(() =>
     duration.value > 0 ? (currentTime.value / duration.value) * 100 : 0
@@ -397,12 +441,13 @@ export function usePlayer() {
     playlists, activePlaylistId, activePlaylist, currentIndex, isPlaying, volume, isMuted,
     currentTime, duration, isLooping, isLoopingAll, isShuffling,
     fadeInDuration, fadeOutDuration, fadeInPreset, fadeOutPreset, crossfadeEnabled,
+    preAmp, normalizationEnabled, isFadingIn, isFadingOut,
     currentTrack, progressPercent,
     play, pause, togglePlay, playNext, playPrev,
     seekTo, setVolume, toggleMute,
     manualFadeOut, manualFadeIn,
     loadTrack, addFiles, removeTrack, clearPlaylist,
-    setFadeInPreset, setFadeOutPreset, formatTime,
+    setFadeInPreset, setFadeOutPreset, setPreAmp, toggleNormalization, formatTime,
     createNewPlaylist, renameActivePlaylist, switchPlaylist, deletePlaylist,
     getAnalyser: () => analyserNode,
     getAudioCtx: () => audioCtx
