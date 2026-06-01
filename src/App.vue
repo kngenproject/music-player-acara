@@ -287,10 +287,14 @@
             :volume="player.volume.value"
             :isMuted="player.isMuted.value"
             :isLandscape="true"
+            :preAmp="player.preAmp.value"
+            :normalizationEnabled="player.normalizationEnabled.value"
             @update:volume="player.setVolume"
             @toggle-mute="player.toggleMute"
             @fade-in="player.manualFadeIn"
             @fade-out="player.manualFadeOut"
+            @update:preAmp="player.setPreAmp"
+            @toggle-normalization="player.toggleNormalization"
           />
         </div>
         <div class="landscape-playlist-wrap">
