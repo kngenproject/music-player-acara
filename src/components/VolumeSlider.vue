@@ -398,4 +398,118 @@ function startDrag(e) {
   font-size: 9px;
   min-width: 28px;
 }
+
+/* ══ TABLET PORTRAIT 600px+ ══ */
+@media (min-width: 600px) and (orientation: portrait) {
+  .volume-row {
+    padding: 14px 18px;
+    gap: 14px;
+  }
+
+  .mute-btn {
+    width: 46px; height: 46px;
+  }
+  .mute-btn svg {
+    width: 24px; height: 24px;
+  }
+
+  .vol-label {
+    font-size: 14px;
+    min-width: 42px;
+  }
+  .vol-label span {
+    font-size: 11px;
+  }
+
+  .slider-track {
+    height: 20px;
+  }
+
+  .slider-thumb {
+    width: 32px; height: 32px;
+    border-width: 3.5px;
+  }
+
+  .fade-row {
+    padding: 10px 18px;
+    gap: 10px;
+  }
+
+  .fade-btn {
+    padding: 11px 14px;
+    font-size: 13px;
+    gap: 8px;
+  }
+  .fade-btn svg {
+    width: 18px; height: 18px;
+  }
+
+  .audio-enhancements {
+    padding: 8px 18px;
+    gap: 10px;
+  }
+
+  .enhance-btn {
+    padding: 8px 14px;
+    font-size: 12px;
+    gap: 6px;
+  }
+  .enhance-btn svg {
+    width: 16px; height: 16px;
+  }
+
+  .preamp-label {
+    font-size: 11px;
+  }
+
+  .preamp-slider::-webkit-slider-thumb {
+    width: 18px; height: 18px;
+  }
+  .preamp-slider::-moz-range-thumb {
+    width: 18px; height: 18px;
+  }
+
+  .preamp-value {
+    font-size: 12px;
+    min-width: 38px;
+  }
+}
+
+/* ══ TABLET PORTRAIT 768px+ split layout: lebih compact ══ */
+@media (min-width: 768px) and (orientation: portrait) {
+  .volume-row {
+    padding: 10px 16px;
+    gap: 10px;
+  }
+
+  .mute-btn {
+    width: 40px; height: 40px;
+  }
+  .mute-btn svg {
+    width: 20px; height: 20px;
+  }
+
+  .slider-track {
+    height: 16px;
+  }
+
+  .slider-thumb {
+    width: 26px; height: 26px;
+  }
+
+  .fade-row {
+    padding: 8px 16px;
+    gap: 8px;
+  }
+
+  .fade-btn {
+    padding: 9px 12px;
+    font-size: 12px;
+  }
+
+  .audio-enhancements {
+    padding: 6px 16px;
+    gap: 8px;
+  }
+}
 </style>

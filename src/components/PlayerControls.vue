@@ -469,6 +469,134 @@ function onSeekTouch(e) {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.5; transform: scale(0.75); }
 }
+
+/* ══ TABLET PORTRAIT 600px+ ══ */
+@media (min-width: 600px) and (orientation: portrait) {
+  .player-controls {
+    gap: 18px;
+    padding: 22px 24px 18px;
+  }
+
+  .track-name-scroll span {
+    font-size: 21px;
+  }
+
+  .time {
+    font-size: 13px;
+    min-width: 44px;
+  }
+
+  .seek-thumb {
+    width: 22px; height: 22px;
+  }
+
+  .seek-track {
+    height: 6px;
+  }
+
+  .main-controls {
+    gap: 22px;
+  }
+
+  .ctrl-btn {
+    width: 62px; height: 62px;
+  }
+  .ctrl-btn svg {
+    width: 30px; height: 30px;
+  }
+
+  .play-btn {
+    width: 82px !important; height: 82px !important;
+  }
+  .play-btn svg {
+    width: 42px !important; height: 42px !important;
+  }
+
+  .pause-btn {
+    width: 62px !important; height: 62px !important;
+  }
+  .pause-btn svg {
+    width: 32px !important; height: 32px !important;
+  }
+
+  .play-pause-pair {
+    gap: 14px;
+  }
+
+  .mode-btn {
+    width: 56px; height: 44px;
+  }
+  .mode-btn svg {
+    width: 22px; height: 22px;
+  }
+
+  .fade-settings {
+    padding: 9px 16px;
+    gap: 10px;
+  }
+
+  .fade-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+  }
+
+  .preset-btn {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .fade-val {
+    font-size: 13px;
+    min-width: 30px;
+  }
+
+  .custom-input {
+    width: 56px;
+    font-size: 13px;
+    padding: 4px 8px;
+  }
+
+  .fade-dot {
+    width: 9px; height: 9px;
+  }
+}
+
+/* ══ TABLET PORTRAIT 768px+ split layout: controls lebih compact ══ */
+@media (min-width: 768px) and (orientation: portrait) {
+  .player-controls {
+    gap: 14px;
+    padding: 18px 20px 14px;
+  }
+
+  .track-name-scroll span {
+    font-size: 18px;
+  }
+
+  .main-controls {
+    gap: 18px;
+  }
+
+  .ctrl-btn {
+    width: 56px; height: 56px;
+  }
+  .ctrl-btn svg {
+    width: 26px; height: 26px;
+  }
+
+  .play-btn {
+    width: 74px !important; height: 74px !important;
+  }
+  .play-btn svg {
+    width: 36px !important; height: 36px !important;
+  }
+
+  .pause-btn {
+    width: 56px !important; height: 56px !important;
+  }
+  .pause-btn svg {
+    width: 28px !important; height: 28px !important;
+  }
+}
 @media (orientation: landscape) and (max-height: 500px) {
   .player-controls {
     gap: 6px;
